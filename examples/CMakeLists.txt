@@ -8,4 +8,5 @@ add_executable( example_draw example_draw.cpp )
 target_link_libraries( example_draw PRIVATE
   ftxui::screen
   ftxui::dom
-  ftxui::component)
+  ftxui::component
+  internal-include)

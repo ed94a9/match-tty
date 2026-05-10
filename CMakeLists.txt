@@ -13,5 +13,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(fmt)
 find_package(ftxui)
 
+add_library( internal-include INTERFACE )
+
+add_subdirectory( include )
 add_subdirectory( examples )
 add_subdirectory( tests )
