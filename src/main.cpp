@@ -8,7 +8,6 @@ int main() {
 
     // Dummy match-3 pin visualization callback
     auto pin_renderer = [](size_t r, size_t c, bool is_focused, bool is_activated) {
-        // ftxui::Element pin = ftxui::text(" ◉ ") | ftxui::color(ftxui::Color::Blue);
         ftxui::Element pin = mtty::make_pin_anyway( r * c );
 
         if (is_focused) {
