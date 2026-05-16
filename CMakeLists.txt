@@ -16,5 +16,6 @@ find_package(ftxui)
 add_library( internal-include INTERFACE )
 
 add_subdirectory( include )
+add_subdirectory( src )
 add_subdirectory( examples )
 add_subdirectory( tests )

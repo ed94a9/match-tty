@@ -9,4 +9,5 @@ target_link_libraries( example_draw PRIVATE
   ftxui::screen
   ftxui::dom
   ftxui::component
-  internal-include)
+  internal-include
+  fmt::fmt )

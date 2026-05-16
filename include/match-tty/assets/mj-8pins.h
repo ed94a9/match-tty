@@ -2,7 +2,9 @@
 
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <fmt/format.h>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 #include <type_traits>
 
@@ -94,6 +96,45 @@ auto make_pin() {
     } else if constexpr (cnt == 9) {
         return make_pin9();
     }
+}
+
+auto make_pin( size_t cnt ) {
+    if ( not (
+        cnt <= 9 && cnt != 8 && cnt != 7 && cnt != 1
+    )) {
+        throw std::invalid_argument(
+            fmt::format("[mtty::make_pin] Only able to make pin of number <= 1 and not any of [1, 7, 8]! Got: {}", cnt));
+    }
+    if (cnt == 2){
+        return make_pin2();
+    } else if (cnt == 3) {
+        return make_pin3();
+    } else if (cnt == 4) {
+        return make_pin4();
+    } else if (cnt == 5) {
+        return make_pin5();
+    } else if (cnt == 6) {
+        return make_pin6();
+    } else if (cnt == 9) {
+        return make_pin9();
+    }
+}
+
+auto make_pin_anyway( std::int64_t any_int ) {
+    auto remainder = any_int % 9;
+    if (remainder == 0){
+        return make_pin<9>();
+    }
+    if (remainder == 1) {
+        return make_pin<2>();
+    }
+    if (remainder == 7) {
+        return make_pin<5>();
+    }
+    if (remainder == 8) {
+        return make_pin<6>();
+    }
+    return make_pin(remainder);
 }
 
 
