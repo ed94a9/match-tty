@@ -25,7 +25,7 @@ inline ftxui::Element create_mh_pins(std::vector<int> mask, ftxui::Color color_v
         }
         lines.push_back(ftxui::hbox(std::move(line)));
     }
-    return vbox(std::move(lines)) | ftxui::border;
+    return vbox(std::move(lines)) | ftxui::border ;
 }
 
 } // namespace detail
@@ -66,7 +66,7 @@ inline auto make_pin6() {
     return detail::create_mh_pins(
         {1, 0, 1,
          1, 0, 1,
-         1, 0, 1}, ftxui::Color::Red
+         1, 0, 1}, ftxui::Color::LightCyan3
     );
 }
 
@@ -74,7 +74,7 @@ inline auto make_pin9() {
     return detail::create_mh_pins(
         {1, 1, 1,
          1, 1, 1,
-         1, 1, 1}, ftxui::Color::Red
+         1, 1, 1}, ftxui::Color::LightCyan3
     );
 }
 
