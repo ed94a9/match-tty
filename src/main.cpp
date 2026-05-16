@@ -22,7 +22,7 @@ int main() {
 
 
     // Build the grid component
-    auto game_grid = mtty::algo::make_interactive_grid(8, 8, pin_renderer);
+    auto game_grid = mtty::algo::make_interactive_grid(7, 19, pin_renderer);
 
     // Standard main UI wrapper
     auto main_layout = ftxui::Renderer(game_grid, [&] {
