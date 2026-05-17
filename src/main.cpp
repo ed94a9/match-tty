@@ -194,12 +194,38 @@ int main(int argc, char** argv ) {
             }
         }
 
-        // FIX 2 & 3: Cleaned up inner returns and validated brace layouts
+        bool is_vertical_swap = is_animating && (src_tile.first != tgt_tile.first);
+
+        auto vertical_spacer = [](int height) {
+            ftxui::Elements rows;
+            for (int i = 0; i < height; ++i) rows.push_back(ftxui::text(""));
+            return ftxui::vbox(std::move(rows));
+        };
+
+
+        if (not is_vertical_swap) {
+            // FIX 2 & 3: Cleaned up inner returns and validated brace layouts
+            return ftxui::vbox({
+                ftxui::text("--- MATCH-TTY GRID (SINGLE-THREADED) ---") | ftxui::hcenter,
+                ftxui::separator(),
+                vertical_spacer(5),
+                game_grid->Render() | ftxui::hcenter,
+                vertical_spacer(5),
+            }) | ftxui::border;
+        }
+
+        size_t fil_rows_cnt = is_animating ? 1 : 5;
         return ftxui::vbox({
             ftxui::text("--- MATCH-TTY GRID (SINGLE-THREADED) ---") | ftxui::hcenter,
             ftxui::separator(),
+            vertical_spacer(fil_rows_cnt),
             game_grid->Render() | ftxui::hcenter,
+            vertical_spacer(fil_rows_cnt),
         }) | ftxui::border;
+
+
+
+
     });
 
     screen.Loop(main_layout);
