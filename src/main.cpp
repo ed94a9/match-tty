@@ -22,15 +22,14 @@ int main() {
     // --- SINGLE THREADED ANIMATION STATE ---
     bool is_animating = false;
     int anim_frame = 0;
-    bool is_fading_back = false; // Tracks if we are in Phase 1 (sliding out) or Phase 3 (retracting)
+    bool is_fading_back = false;
     std::pair<size_t, size_t> src_tile;
     std::pair<size_t, size_t> tgt_tile;
 
-    // Time tracking to lock frame rate manually
     auto last_frame_time = std::chrono::steady_clock::now();
-    const std::chrono::milliseconds frame_duration(30); // 30ms per frame
+    const std::chrono::milliseconds frame_duration(300);
 
-    auto pin_renderer = [&](size_t r, size_t c, bool is_focused, bool is_activated) {
+    auto pin_renderer = [&](size_t r, size_t c, bool is_focused, bool is_activated) -> ftxui::Element {
         ftxui::Element pin = mtty::make_pin_anyway(board_state[r][c]);
 
         if (is_animating) {
@@ -40,22 +39,41 @@ int main() {
             if (is_src || is_tgt) {
                 int r_diff = static_cast<int>(tgt_tile.first) - static_cast<int>(src_tile.first);
                 int c_diff = static_cast<int>(tgt_tile.second) - static_cast<int>(src_tile.second);
-                int shift_spaces = anim_frame;
+                int shift = anim_frame;
 
-                if (c_diff != 0) { // HORIZONTAL
-                    bool move_right = (is_src && c_diff > 0) || (is_tgt && c_diff < 0);
-                    if (move_right) {
-                        pin = ftxui::hbox({ftxui::text(std::string(shift_spaces, ' ')), pin});
+                if (is_tgt) {
+                    r_diff = -r_diff;
+                    c_diff = -c_diff;
+                }
+
+                if (c_diff != 0) { // HORIZONTAL SWAP
+                    if (c_diff > 0) {
+                        pin = ftxui::hbox({
+                            ftxui::text(std::string(shift, ' ')),
+                            mtty::make_pin_anyway(board_state[r][c]),
+                            ftxui::text(std::string(4 - shift, ' '))
+                        });
                     } else {
-                        pin = ftxui::hbox({pin, ftxui::text(std::string(shift_spaces, ' '))});
+                        pin = ftxui::hbox({
+                            ftxui::text(std::string(4 - shift, ' ')),
+                            mtty::make_pin_anyway(board_state[r][c]),
+                            ftxui::text(std::string(shift, ' '))
+                        });
                     }
                 }
-                else if (r_diff != 0) { // VERTICAL
-                    bool move_down = (is_src && r_diff > 0) || (is_tgt && r_diff < 0);
-                    if (move_down) {
-                        pin = ftxui::vbox({ftxui::text(std::string(shift_spaces, ' ')), pin});
+                else if (r_diff != 0) { // VERTICAL SWAP
+                    if (r_diff > 0) {
+                        pin = ftxui::vbox({
+                            ftxui::text(std::string(shift, ' ')),
+                            mtty::make_pin_anyway(board_state[r][c]),
+                            ftxui::text(std::string(4 - shift, ' '))
+                        });
                     } else {
-                        pin = ftxui::vbox({pin, ftxui::text(std::string(shift_spaces, ' '))});
+                        pin = ftxui::vbox({
+                            ftxui::text(std::string(4 - shift, ' ')),
+                            mtty::make_pin_anyway(board_state[r][c]),
+                            ftxui::text(std::string(shift, ' '))
+                        });
                     }
                 }
                 return pin | ftxui::bgcolor(ftxui::Color::DarkBlue);
@@ -70,7 +88,6 @@ int main() {
         return pin;
     };
 
-    // Triggered once at the beginning of a swap action
     auto swap_handler = [&](std::pair<size_t, size_t> source, std::pair<size_t, size_t> target) {
         if (is_animating) return;
 
@@ -81,49 +98,41 @@ int main() {
         tgt_tile = target;
         last_frame_time = std::chrono::steady_clock::now();
 
-        // Kickstart the single-threaded frame loop event chain
         screen.PostEvent(ftxui::Event::Custom);
     };
 
     auto game_grid = mtty::algo::make_interactive_grid(max_rows, max_cols, pin_renderer, swap_handler);
 
-    // Standard main UI wrapper context
-    auto main_layout = ftxui::Renderer(game_grid, [&] {
-        // --- THE ENGINE TICK (Runs every time the screen redraws) ---
+    auto main_layout = ftxui::Renderer(game_grid, [&] () -> ftxui::Element {
         if (is_animating) {
             auto now = std::chrono::steady_clock::now();
 
-            // Only advance the frame if our 30ms target has passed
             if (now - last_frame_time >= frame_duration) {
                 last_frame_time = now;
 
                 if (!is_fading_back) {
-                    // Phase 1: Sliding out
                     if (anim_frame < 4) {
                         anim_frame++;
                     } else {
-                        // Phase 2: Boundary reached! Swap values in place
                         std::swap(board_state[src_tile.first][src_tile.second],
                                   board_state[tgt_tile.first][tgt_tile.second]);
                         is_fading_back = true;
                     }
                 } else {
-                    // Phase 3: Sliding back in
                     if (anim_frame > 0) {
                         anim_frame--;
                     } else {
-                        // Animation complete!
                         is_animating = false;
                     }
                 }
             }
 
-            // If we are still animating, request another loop cycle immediately
             if (is_animating) {
                 screen.PostEvent(ftxui::Event::Custom);
             }
         }
 
+        // FIX 2 & 3: Cleaned up inner returns and validated brace layouts
         return ftxui::vbox({
             ftxui::text("--- MATCH-TTY GRID (SINGLE-THREADED) ---") | ftxui::hcenter,
             ftxui::separator(),
