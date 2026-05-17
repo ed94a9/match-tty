@@ -12,6 +12,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(fmt)
 find_package(ftxui)
+find_package(Catch2)
 
 add_library( internal-include INTERFACE )
 
