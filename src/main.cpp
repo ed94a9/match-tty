@@ -62,17 +62,26 @@ int main() {
                     }
                 }
                 else if (r_diff != 0) { // VERTICAL SWAP
-                    if (r_diff > 0) {
+                    // Helper lambda to generate true vertical spacing rows
+                    auto vertical_spacer = [](int height) {
+                        ftxui::Elements rows;
+                        for (int i = 0; i < height; ++i) {
+                            rows.push_back(ftxui::text("")); // Generates actual vertical lines
+                        }
+                        return ftxui::vbox(std::move(rows));
+                    };
+
+                    if (r_diff > 0) { // Moving Down
                         pin = ftxui::vbox({
-                            ftxui::text(std::string(shift, ' ')),
+                            vertical_spacer(shift),
                             mtty::make_pin_anyway(board_state[r][c]),
-                            ftxui::text(std::string(4 - shift, ' '))
+                            vertical_spacer(4 - shift)
                         });
-                    } else {
+                    } else { // Moving Up
                         pin = ftxui::vbox({
-                            ftxui::text(std::string(4 - shift, ' ')),
+                            vertical_spacer(4 - shift),
                             mtty::make_pin_anyway(board_state[r][c]),
-                            ftxui::text(std::string(shift, ' '))
+                            vertical_spacer(shift)
                         });
                     }
                 }
