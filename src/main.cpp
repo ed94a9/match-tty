@@ -2,11 +2,13 @@
 #include <ftxui/dom/elements.hpp>
 #include <match-tty/assets/components.h>
 #include <match-tty/assets/mj-8pins.h>
+#include <match-tty/assets/common.h>
 #include <vector>
 #include <chrono>
 #include <algorithm>
 
-int main(int argc, char** argv ) {
+int main(int argc, char** argv )
+{
 
     std::size_t frame_dur_ms = std::atoi(argv[1]);
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
@@ -117,23 +119,17 @@ int main(int argc, char** argv ) {
                     }
                 }
                 else if (r_diff != 0) { // VERTICAL SWAP ANIMATION
-                    auto vertical_spacer = [](int height) {
-                        ftxui::Elements rows;
-                        for (int i = 0; i < height; ++i) rows.push_back(ftxui::text(""));
-                        return ftxui::vbox(std::move(rows));
-                    };
-
                     if (r_diff > 0) {
                         pin = ftxui::vbox({
-                            vertical_spacer(shift),
+                            mtty::vertical_spacer(shift),
                             mtty::make_pin_anyway(board_state[r][c]),
-                            vertical_spacer(4 - shift)
+                            mtty::vertical_spacer(4 - shift)
                         });
                     } else {
                         pin = ftxui::vbox({
-                            vertical_spacer(4 - shift),
+                            mtty::vertical_spacer(4 - shift),
                             mtty::make_pin_anyway(board_state[r][c]),
-                            vertical_spacer(shift)
+                            mtty::vertical_spacer(shift)
                         });
                     }
                 }
@@ -196,36 +192,26 @@ int main(int argc, char** argv ) {
 
         bool is_vertical_swap = is_animating && (src_tile.first != tgt_tile.first);
 
-        auto vertical_spacer = [](int height) {
-            ftxui::Elements rows;
-            for (int i = 0; i < height; ++i) rows.push_back(ftxui::text(""));
-            return ftxui::vbox(std::move(rows));
-        };
-
 
         if (not is_vertical_swap) {
             // FIX 2 & 3: Cleaned up inner returns and validated brace layouts
             return ftxui::vbox({
-                ftxui::text("--- MATCH-TTY GRID (SINGLE-THREADED) ---") | ftxui::hcenter,
+                ftxui::text("--- MATCH-TTY GRID ---") | ftxui::hcenter,
                 ftxui::separator(),
-                vertical_spacer(5),
+                mtty::vertical_spacer(5),
                 game_grid->Render() | ftxui::hcenter,
-                vertical_spacer(5),
+                mtty::vertical_spacer(5),
             }) | ftxui::border;
         }
 
         size_t fil_rows_cnt = is_animating ? 1 : 5;
         return ftxui::vbox({
-            ftxui::text("--- MATCH-TTY GRID (SINGLE-THREADED) ---") | ftxui::hcenter,
+            ftxui::text("--- MATCH-TTY GRID ---") | ftxui::hcenter,
             ftxui::separator(),
-            vertical_spacer(fil_rows_cnt),
+            mtty::vertical_spacer(fil_rows_cnt),
             game_grid->Render() | ftxui::hcenter,
-            vertical_spacer(fil_rows_cnt),
+            mtty::vertical_spacer(fil_rows_cnt),
         }) | ftxui::border;
-
-
-
-
     });
 
     screen.Loop(main_layout);
