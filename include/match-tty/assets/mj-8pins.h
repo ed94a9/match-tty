@@ -68,7 +68,7 @@ inline auto make_pin6() {
     return detail::create_mh_pins(
         {1, 0, 1,
          1, 0, 1,
-         1, 0, 1}, ftxui::Color::LightCyan3
+         1, 0, 1}, ftxui::Color::LightCoral
     );
 }
 
@@ -76,7 +76,7 @@ inline auto make_pin9() {
     return detail::create_mh_pins(
         {1, 1, 1,
          1, 1, 1,
-         1, 1, 1}, ftxui::Color::LightCyan3
+         1, 1, 1}, ftxui::Color::LightCoral
     );
 }
 
