@@ -109,7 +109,7 @@ public:
                     int local = elim_global_frame_ - pin.delay;
                     if (local < 0) break;
                     int visual = local / elim_hold_ticks_;
-                    if (visual == 0) return mtty::make_pin_anyway_body(board_state[r][c]) | ftxui::bgcolor(ftxui::Color::DarkBlue);
+                    if (visual == 0) return mtty::make_pin_center_only(board_state[r][c]) | ftxui::bgcolor(ftxui::Color::DarkBlue);
                     if (visual == 1) return mtty::make_center_dot() | ftxui::bgcolor(ftxui::Color::DarkBlue);
                     return ftxui::text(" ") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1);
                 }

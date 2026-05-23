@@ -133,8 +133,9 @@ auto make_pin_anyway( std::int64_t any_int ) {
     return make_pin<9>();
 }
 
-// Borderless pin body (3x3 dot pattern). Used for elimination frame 0.
-inline ftxui::Element make_pin_anyway_body(std::int64_t any_int) {
+// Center pixel inside a border that has moved one pixel inward (surrounding the
+// inner 3×3 of the original 5×5 footprint). Used for elimination frame 0.
+inline ftxui::Element make_pin_center_only(std::int64_t any_int) {
     auto idx = any_int % 6;
     static const std::vector<std::vector<int>> masks = {
         {1,0,0, 0,0,0, 0,0,1},
@@ -152,26 +153,33 @@ inline ftxui::Element make_pin_anyway_body(std::int64_t any_int) {
         ftxui::Color::LightCoral,
         ftxui::Color::LightCoral,
     };
-    auto inner = detail::make_inner_dots(masks[static_cast<size_t>(idx)], colors[static_cast<size_t>(idx)]);
-    return ftxui::hbox({
-        ftxui::text(" "),
-        ftxui::vbox({
-            ftxui::text(" "),
-            inner,
-            ftxui::text(" "),
+    auto& mask = masks[static_cast<size_t>(idx)];
+    auto color = colors[static_cast<size_t>(idx)];
+
+    auto center_str = std::string(mask[4] ? "●" : " ");
+    auto center_el = ftxui::text(center_str) | ftxui::color(color) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1);
+
+    return ftxui::vbox({
+        ftxui::text("     "),
+        ftxui::text(" ╭─╮ "),
+        ftxui::hbox({
+            ftxui::text(" │"),
+            center_el,
+            ftxui::text("│ "),
         }),
-        ftxui::text(" "),
+        ftxui::text(" ╰─╯ "),
+        ftxui::text("     "),
     });
 }
 
-// Single center dot, padded to 5×5. Used for elimination frame 1.
+// Outlined circle, padded to 5×5. Used for elimination frame 1.
 inline ftxui::Element make_center_dot() {
     return ftxui::hbox({
         ftxui::text("  "),
         ftxui::vbox({
             ftxui::text(" "),
             ftxui::text(" "),
-            ftxui::text("●") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1),
+            ftxui::text("○") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1),
             ftxui::text(" "),
             ftxui::text(" "),
         }),
