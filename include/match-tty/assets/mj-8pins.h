@@ -12,20 +12,24 @@ namespace mtty {
 
 namespace detail {
 
-inline ftxui::Element create_mh_pins(std::vector<int> mask, ftxui::Color color_val, int rows = 3, int cols = 3) {
+inline ftxui::Element make_inner_dots(std::vector<int> mask, ftxui::Color color_val) {
     ftxui::Elements lines;
-    for (int i = 0; i < rows; ++i) {
+    for (int i = 0; i < 3; ++i) {
         ftxui::Elements line;
-        for (int j = 0; j < cols; ++j) {
-            if (mask[i * cols + j]) {
+        for (int j = 0; j < 3; ++j) {
+            if (mask[i * 3 + j]) {
                 line.push_back(ftxui::text("●") | ftxui::color(color_val) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1));
             } else {
-                line.push_back(ftxui::text(" ") | size(ftxui::WIDTH, ftxui::EQUAL, 1));
+                line.push_back(ftxui::text(" ") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1));
             }
         }
         lines.push_back(ftxui::hbox(std::move(line)));
     }
-    return vbox(std::move(lines)) | ftxui::border ;
+    return ftxui::vbox(std::move(lines));
+}
+
+inline ftxui::Element create_mh_pins(std::vector<int> mask, ftxui::Color color_val, int rows = 3, int cols = 3) {
+    return make_inner_dots(std::move(mask), color_val) | ftxui::border ;
 }
 
 } // namespace detail
@@ -129,5 +133,50 @@ auto make_pin_anyway( std::int64_t any_int ) {
     return make_pin<9>();
 }
 
+// Borderless pin body (3x3 dot pattern). Used for elimination frame 0.
+inline ftxui::Element make_pin_anyway_body(std::int64_t any_int) {
+    auto idx = any_int % 6;
+    static const std::vector<std::vector<int>> masks = {
+        {1,0,0, 0,0,0, 0,0,1},
+        {1,0,0, 0,1,0, 0,0,1},
+        {1,0,1, 0,0,0, 1,0,1},
+        {1,0,1, 0,1,0, 1,0,1},
+        {1,0,1, 1,0,1, 1,0,1},
+        {1,1,1, 1,1,1, 1,1,1},
+    };
+    static const std::vector<ftxui::Color> colors = {
+        ftxui::Color::Yellow,
+        ftxui::Color::Yellow,
+        ftxui::Color::Green,
+        ftxui::Color::Green,
+        ftxui::Color::LightCoral,
+        ftxui::Color::LightCoral,
+    };
+    auto inner = detail::make_inner_dots(masks[static_cast<size_t>(idx)], colors[static_cast<size_t>(idx)]);
+    return ftxui::hbox({
+        ftxui::text(" "),
+        ftxui::vbox({
+            ftxui::text(" "),
+            inner,
+            ftxui::text(" "),
+        }),
+        ftxui::text(" "),
+    });
+}
+
+// Single center dot, padded to 5×5. Used for elimination frame 1.
+inline ftxui::Element make_center_dot() {
+    return ftxui::hbox({
+        ftxui::text("  "),
+        ftxui::vbox({
+            ftxui::text(" "),
+            ftxui::text(" "),
+            ftxui::text("●") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1),
+            ftxui::text(" "),
+            ftxui::text(" "),
+        }),
+        ftxui::text("  "),
+    });
+}
 
 } // namespace mtty
