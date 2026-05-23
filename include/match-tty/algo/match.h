@@ -5,7 +5,7 @@
 
 namespace mtty {
 
-using id_type = std::size_t;
+using id_type = int;
 
 namespace algo {
 

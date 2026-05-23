@@ -1,10 +1,16 @@
+#pragma once
+
 #include <vector>
 #include <chrono>
 #include <utility>
 #include <algorithm>
 #include <string>
+#include <functional>
+#include <random>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <match-tty/algo/match.h>
+#include <match-tty/utils/Logger.h>
 
 class GameBoardState
 {
@@ -12,18 +18,21 @@ public:
     static constexpr size_t max_rows = 7;
     static constexpr size_t max_cols = 19;
 
-    GameBoardState(int frame_dur_ms)
+    using GenerateCallback = std::function<int(size_t, size_t)>;
+
+    GameBoardState(int frame_dur_ms, GenerateCallback gen_cb = defaultGenerate)
         : is_animating(false)
         , anim_frame(0)
         , is_fading_back(false)
         , frame_duration(frame_dur_ms)
         , last_frame_time(std::chrono::steady_clock::now())
         , board_state(max_rows, std::vector<int>(max_cols, 0))
+        , generate_cb_(std::move(gen_cb))
     {
         // Initialize the board matrix mathematical pattern
         for (size_t r = 0; r < max_rows; ++r) {
             for (size_t c = 0; c < max_cols; ++c) {
-                board_state[r][c] = (r * c) % 8;
+                board_state[r][c] = (r * c) % 6;
             }
         }
     }
@@ -49,6 +58,8 @@ public:
                     anim_frame--;
                 } else {
                     is_animating = false;
+                    resolveMatches();
+                    screen.PostEvent(ftxui::Event::Custom);
                 }
             }
         }
@@ -68,6 +79,8 @@ public:
         src_tile = source;
         tgt_tile = target;
         last_frame_time = std::chrono::steady_clock::now();
+
+        QLOG_INFO("Swap ({},{}) <-> ({},{})", source.first, source.second, target.first, target.second);
 
         screen.PostEvent(ftxui::Event::Custom);
     }
@@ -192,6 +205,26 @@ public:
     }
 
 private:
+    void resolveMatches() {
+        while (true) {
+            auto matched = mtty::algo::check_match(board_state);
+            if (matched.empty()) break;
+
+            QLOG_INFO("Found {} matched tiles, refilling...", matched.size());
+            for (auto& [r, c] : matched) {
+                int old_val = board_state[r][c];
+                board_state[r][c] = generate_cb_(r, c);
+                QLOG_DEBUG("  ({},{}) {} -> {}", r, c, old_val, board_state[r][c]);
+            }
+        }
+    }
+
+    static int defaultGenerate(size_t, size_t) {
+        static std::mt19937 rng{std::random_device{}()};
+        static std::uniform_int_distribution<int> dist(0, 5);
+        return dist(rng);
+    }
+
     bool is_animating;
     int anim_frame;
     bool is_fading_back;
@@ -201,4 +234,5 @@ private:
     std::chrono::milliseconds frame_duration;
     std::chrono::steady_clock::time_point last_frame_time;
     std::vector<std::vector<int>> board_state;
+    GenerateCallback generate_cb_;
 };

@@ -4,12 +4,16 @@
 #include <match-tty/assets/mj-8pins.h>
 #include <match-tty/assets/common.h>
 #include <match-tty/game/GameBoardState.h>
+#include <match-tty/utils/Logger.h>
 #include <vector>
 #include <chrono>
 #include <algorithm>
 
 int main(int argc, char** argv )
 {
+    mtty::initLogger("match-tty.log");
+    QLOG_INFO("--- match-tty started ---");
+
     std::size_t frame_dur_ms = std::atoi(argv[1]);
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
 

@@ -18,10 +18,8 @@ inline ftxui::Element create_mh_pins(std::vector<int> mask, ftxui::Color color_v
         ftxui::Elements line;
         for (int j = 0; j < cols; ++j) {
             if (mask[i * cols + j]) {
-                // Force width to exactly 1 character
                 line.push_back(ftxui::text("●") | ftxui::color(color_val) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1));
             } else {
-                // Empty cell exactly 1 character wide
                 line.push_back(ftxui::text(" ") | size(ftxui::WIDTH, ftxui::EQUAL, 1));
             }
         }
@@ -120,21 +118,15 @@ auto make_pin( size_t cnt ) {
     }
 }
 
+// Maps any integer to one of the 6 available visual pins {2,3,4,5,6,9}
 auto make_pin_anyway( std::int64_t any_int ) {
-    auto remainder = any_int % 9;
-    if (remainder == 0){
-        return make_pin<9>();
-    }
-    if (remainder == 1) {
-        return make_pin<2>();
-    }
-    if (remainder == 7) {
-        return make_pin<5>();
-    }
-    if (remainder == 8) {
-        return make_pin<6>();
-    }
-    return make_pin(remainder);
+    auto idx = any_int % 6;
+    if (idx == 0) return make_pin<2>();
+    if (idx == 1) return make_pin<3>();
+    if (idx == 2) return make_pin<4>();
+    if (idx == 3) return make_pin<5>();
+    if (idx == 4) return make_pin<6>();
+    return make_pin<9>();
 }
 
 
