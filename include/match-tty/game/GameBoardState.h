@@ -235,7 +235,7 @@ public:
     }
 
 private:
-    static constexpr int elim_hold_ticks_ = 8;
+    static constexpr int elim_hold_ticks_ = 7;
 
     struct EliminatingPin {
         size_t row, col;
@@ -252,11 +252,8 @@ private:
         elim_global_frame_ = 0;
         eliminating_pins_.reserve(matched.size());
 
-        static std::mt19937 rng{std::random_device{}()};
-        static std::uniform_int_distribution<int> delay_dist(0, 5);
-
         for (auto& [r, c] : matched) {
-            eliminating_pins_.push_back({r, c, delay_dist(rng)});
+            eliminating_pins_.push_back({r, c, 0});
         }
     }
 
