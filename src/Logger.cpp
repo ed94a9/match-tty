@@ -1,6 +1,11 @@
 #include <match-tty/utils/Logger.h>
-#include <quill/Quill.h>
 #include <vector>
+#include <quill/Frontend.h>
+#include <quill/Backend.h>
+#include <quill/sinks/FileSink.h>
+#include <quill/sinks/ConsoleSink.h>
+#include <quill/core/FrontendOptions.h>
+#include <quill/backend/SignalHandler.h>
 
 namespace mtty {
 
@@ -9,16 +14,12 @@ quill::Logger* g_logger = nullptr;
 }
 
 void initLogger(std::string_view log_file) {
-    quill::start();
+    quill::Backend::start<quill::FrontendOptions>(quill::BackendOptions{}, quill::SignalHandlerOptions{});
 
-    auto file_h = quill::file_handler(std::string(log_file));
-    auto stdout_h = quill::stdout_handler();
+    auto file_sink = quill::Frontend::create_or_get_sink<quill::FileSink>(std::string(log_file));
+    auto stdout_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("stdout");
 
-    std::vector<std::shared_ptr<quill::Handler>> handlers;
-    handlers.push_back(std::move(file_h));
-    handlers.push_back(std::move(stdout_h));
-
-    g_logger = quill::create_logger("match-tty", std::move(handlers));
+    g_logger = quill::Frontend::create_or_get_logger("match-tty", {file_sink, stdout_sink});
 }
 
 quill::Logger* logger() {

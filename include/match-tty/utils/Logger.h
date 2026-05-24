@@ -1,6 +1,8 @@
 #pragma once
 
-#include <quill/Quill.h>
+#include <quill/Logger.h>
+#include <quill/LogMacros.h>
+#include <quill/SimpleSetup.h>
 #include <string_view>
 
 namespace mtty {
