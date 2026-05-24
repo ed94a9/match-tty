@@ -1,2 +1,4 @@
 build*
 match-tty.log
+.cache/
+*DS_Store
