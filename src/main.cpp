@@ -4,11 +4,13 @@
 #include <match-tty/assets/mj-8pins.h>
 #include <match-tty/assets/common.h>
 #include <match-tty/game/GameBoardState.h>
+#include <match-tty/game/TimeBar.h>
 #include <match-tty/utils/Logger.h>
 #include <vector>
 #include <chrono>
 #include <algorithm>
 #include <string>
+#include <memory>
 
 int main(int argc, char** argv )
 {
@@ -34,8 +36,9 @@ int main(int argc, char** argv )
 
     // 1. Instantiation
     GameBoardState game(frame_dur_ms, auto_swap_back);
-
-    game.startTimer(game_time_secs, screen);
+    auto time_bar = std::make_unique<TimeBar>();
+    game.setTimeBar(time_bar.get());
+    time_bar->start(game_time_secs, screen);
 
     // 2. Clean, non-cluttered callback registration hook setup
     auto game_grid = mtty::algo::make_interactive_grid(
@@ -54,38 +57,6 @@ int main(int argc, char** argv )
     auto main_layout = ftxui::Renderer(game_grid, [&] () -> ftxui::Element {
         game.UpdateAnimationTimeline(screen);
 
-        // --- vertical timer bar ---
-        int remaining = game.getTimeRemaining();
-        int total = game.getTotalTime();
-        int bar_h = GameBoardState::max_rows * 3;
-        int filled_cnt = total > 0 ? std::min((remaining * bar_h) / total, bar_h) : 0;
-        int empty_cnt = bar_h - filled_cnt;
-
-        ftxui::Color bar_color = remaining <= 10 ? ftxui::Color::RedLight
-                           : remaining <= 20 ? ftxui::Color::YellowLight
-                           : ftxui::Color::GreenLight;
-
-        std::vector<ftxui::Element> segs;
-        segs.reserve(bar_h);
-        for (int i = 0; i < empty_cnt; ++i)
-            segs.push_back(ftxui::text("  ") | ftxui::bgcolor(ftxui::Color::GrayDark));
-        for (int i = 0; i < filled_cnt; ++i)
-            segs.push_back(ftxui::text("  ") | ftxui::bgcolor(bar_color));
-
-        ftxui::Element timer_col = ftxui::vbox({
-            ftxui::filler(),
-            ftxui::vbox({
-                ftxui::text(" " + std::to_string(remaining) + "s ")
-                    | ftxui::color(ftxui::Color::White) | ftxui::hcenter,
-                ftxui::vbox(std::move(segs)),
-                game.isGameOver()
-                    ? ftxui::text("OVER") | ftxui::bold
-                        | ftxui::color(ftxui::Color::RedLight) | ftxui::hcenter
-                    : ftxui::text(""),
-            }),
-            ftxui::filler(),
-        });
-
         // --- grid area ---
         size_t fil_rows_cnt = game.isVerticalSwap() && game.isAnimating() ? 1 : 5;
         ftxui::Element grid_area = ftxui::vbox({
@@ -100,10 +71,10 @@ int main(int argc, char** argv )
             ftxui::hbox({
                 ftxui::filler(),
                 grid_area,
-                timer_col,
+                time_bar->Render(GameBoardState::max_rows * 3),
                 ftxui::filler(),
             }),
-            game.isGameOver()
+            time_bar->isOver()
                 ? ftxui::text("  GAME OVER  ") | ftxui::bold
                     | ftxui::color(ftxui::Color::RedLight) | ftxui::hcenter
                 : ftxui::text(""),
@@ -112,6 +83,6 @@ int main(int argc, char** argv )
 
     screen.Loop(main_layout);
 
-    game.stopTimer();
+    time_bar->stop();
     return 0;
 }

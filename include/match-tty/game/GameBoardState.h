@@ -7,11 +7,10 @@
 #include <string>
 #include <functional>
 #include <random>
-#include <atomic>
-#include <thread>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <match-tty/algo/match.h>
+#include <match-tty/game/TimeBar.h>
 #include <match-tty/utils/Logger.h>
 
 class GameBoardState
@@ -96,7 +95,7 @@ public:
     }
 
     void TriggerSwap(std::pair<size_t, size_t> source, std::pair<size_t, size_t> target, ftxui::ScreenInteractive& screen) {
-        if (game_over_ || is_animating || is_eliminating_) return;
+        if ((time_bar_ && time_bar_->isOver()) || is_animating || is_eliminating_) return;
 
         is_animating = true;
         anim_frame = 0;
@@ -248,39 +247,7 @@ public:
         return is_animating && (src_tile.second != tgt_tile.second);
     }
 
-    void startTimer(int seconds, ftxui::ScreenInteractive& screen) {
-        if (seconds <= 0) return;
-        total_time_ = seconds;
-        time_remaining_ = seconds;
-        timer_running_ = true;
-        timer_thread_ = std::thread([this, &screen]() {
-            while (timer_running_) {
-                if (time_remaining_ <= 0) {
-                    game_over_ = true;
-                    screen.PostEvent(ftxui::Event::Custom);
-                    break;
-                }
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                if (timer_running_) {
-                    --time_remaining_;
-                    screen.PostEvent(ftxui::Event::Custom);
-                }
-            }
-        });
-    }
-
-    void stopTimer() {
-        timer_running_ = false;
-        if (timer_thread_.joinable()) {
-            timer_thread_.join();
-        }
-    }
-
-    int getTimeRemaining() const { return time_remaining_.load(); }
-    int getTotalTime() const { return total_time_; }
-    bool isGameOver() const { return game_over_.load(); }
-
-    ~GameBoardState() { stopTimer(); }
+    void setTimeBar(TimeBar* tb) { time_bar_ = tb; }
 
 private:
     static constexpr int elim_hold_ticks_ = 7;
@@ -344,10 +311,6 @@ private:
     int elim_global_frame_;
     std::vector<EliminatingPin> eliminating_pins_;
     bool auto_swap_back_;
-    std::atomic<int> time_remaining_{0};
-    std::atomic<bool> game_over_{false};
-    std::atomic<bool> timer_running_{false};
-    std::thread timer_thread_;
-    int total_time_ = 0;
     int swap_back_flash_ = 0;
+    TimeBar* time_bar_ = nullptr;
 };
