@@ -8,17 +8,29 @@
 #include <vector>
 #include <chrono>
 #include <algorithm>
+#include <string>
 
 int main(int argc, char** argv )
 {
     mtty::initLogger("match-tty.log");
     QLOG_INFO("--- match-tty started ---");
 
-    std::size_t frame_dur_ms = std::atoi(argv[1]);
+    std::size_t frame_dur_ms = 0;
+    bool auto_swap_back = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+        if (arg == "--auto-swap-back") {
+            auto_swap_back = true;
+        } else {
+            frame_dur_ms = std::atoi(arg.c_str());
+        }
+    }
+
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
 
     // 1. Instantiation
-    GameBoardState game(frame_dur_ms);
+    GameBoardState game(frame_dur_ms, auto_swap_back);
 
     // 2. Clean, non-cluttered callback registration hook setup
     auto game_grid = mtty::algo::make_interactive_grid(

@@ -20,7 +20,7 @@ public:
 
     using GenerateCallback = std::function<int(size_t, size_t)>;
 
-    GameBoardState(int frame_dur_ms, GenerateCallback gen_cb = defaultGenerate)
+    GameBoardState(int frame_dur_ms, bool auto_swap_back = false, GenerateCallback gen_cb = defaultGenerate)
         : is_animating(false)
         , anim_frame(0)
         , is_fading_back(false)
@@ -30,6 +30,7 @@ public:
         , generate_cb_(std::move(gen_cb))
         , is_eliminating_(false)
         , elim_global_frame_(0)
+        , auto_swap_back_(auto_swap_back)
     {
         for (size_t r = 0; r < max_rows; ++r) {
             for (size_t c = 0; c < max_cols; ++c) {
@@ -244,7 +245,16 @@ private:
 
     void startElimination() {
         auto matched = mtty::algo::check_match(board_state);
-        if (matched.empty()) return;
+        if (matched.empty()) {
+            if (auto_swap_back_) {
+                std::swap(board_state[src_tile.first][src_tile.second],
+                          board_state[tgt_tile.first][tgt_tile.second]);
+                QLOG_INFO("No match, swapping back ({},{}) <-> ({},{})",
+                          src_tile.first, src_tile.second,
+                          tgt_tile.first, tgt_tile.second);
+            }
+            return;
+        }
 
         QLOG_INFO("Found {} matched tiles, eliminating...", matched.size());
 
@@ -285,4 +295,5 @@ private:
     bool is_eliminating_;
     int elim_global_frame_;
     std::vector<EliminatingPin> eliminating_pins_;
+    bool auto_swap_back_;
 };
