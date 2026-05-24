@@ -7,6 +7,8 @@
 #include <string>
 #include <functional>
 #include <random>
+#include <atomic>
+#include <thread>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <match-tty/algo/match.h>
@@ -37,10 +39,11 @@ public:
                 board_state[r][c] = (r * c) % 6;
             }
         }
+        startElimination();
     }
 
     void UpdateAnimationTimeline(ftxui::ScreenInteractive& screen) {
-        if (!is_animating && !is_eliminating_) return;
+        if (!is_animating && !is_eliminating_ && swap_back_flash_ == 0) return;
 
         auto now = std::chrono::steady_clock::now();
         if (now - last_frame_time >= frame_duration) {
@@ -60,7 +63,7 @@ public:
                         anim_frame--;
                     } else {
                         is_animating = false;
-                        startElimination();
+                        startElimination(true);
                     }
                 }
             }
@@ -83,13 +86,17 @@ public:
             }
         }
 
-        if (is_animating || is_eliminating_) {
+        if (swap_back_flash_ > 0) {
+            --swap_back_flash_;
+        }
+
+        if (is_animating || is_eliminating_ || swap_back_flash_ > 0) {
             screen.PostEvent(ftxui::Event::Custom);
         }
     }
 
     void TriggerSwap(std::pair<size_t, size_t> source, std::pair<size_t, size_t> target, ftxui::ScreenInteractive& screen) {
-        if (is_animating || is_eliminating_) return;
+        if (game_over_ || is_animating || is_eliminating_) return;
 
         is_animating = true;
         anim_frame = 0;
@@ -211,6 +218,12 @@ public:
             }
         }
 
+        if (swap_back_flash_ > 0 &&
+            ((r == src_tile.first && c == src_tile.second) ||
+             (r == tgt_tile.first && c == tgt_tile.second))) {
+            return pin | ftxui::bgcolor(ftxui::Color::Cyan);
+        }
+
         if (is_activated) {
             pin = pin | ftxui::bgcolor(ftxui::Color::Red) | ftxui::color(ftxui::Color::White);
         } else if (is_focused) {
@@ -235,6 +248,40 @@ public:
         return is_animating && (src_tile.second != tgt_tile.second);
     }
 
+    void startTimer(int seconds, ftxui::ScreenInteractive& screen) {
+        if (seconds <= 0) return;
+        total_time_ = seconds;
+        time_remaining_ = seconds;
+        timer_running_ = true;
+        timer_thread_ = std::thread([this, &screen]() {
+            while (timer_running_) {
+                if (time_remaining_ <= 0) {
+                    game_over_ = true;
+                    screen.PostEvent(ftxui::Event::Custom);
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                if (timer_running_) {
+                    --time_remaining_;
+                    screen.PostEvent(ftxui::Event::Custom);
+                }
+            }
+        });
+    }
+
+    void stopTimer() {
+        timer_running_ = false;
+        if (timer_thread_.joinable()) {
+            timer_thread_.join();
+        }
+    }
+
+    int getTimeRemaining() const { return time_remaining_.load(); }
+    int getTotalTime() const { return total_time_; }
+    bool isGameOver() const { return game_over_.load(); }
+
+    ~GameBoardState() { stopTimer(); }
+
 private:
     static constexpr int elim_hold_ticks_ = 7;
 
@@ -243,12 +290,13 @@ private:
         int delay;
     };
 
-    void startElimination() {
+    void startElimination(bool from_swap = false) {
         auto matched = mtty::algo::check_match(board_state);
         if (matched.empty()) {
-            if (auto_swap_back_) {
+            if (from_swap && auto_swap_back_) {
                 std::swap(board_state[src_tile.first][src_tile.second],
                           board_state[tgt_tile.first][tgt_tile.second]);
+                swap_back_flash_ = 4;
                 QLOG_INFO("No match, swapping back ({},{}) <-> ({},{})",
                           src_tile.first, src_tile.second,
                           tgt_tile.first, tgt_tile.second);
@@ -296,4 +344,10 @@ private:
     int elim_global_frame_;
     std::vector<EliminatingPin> eliminating_pins_;
     bool auto_swap_back_;
+    std::atomic<int> time_remaining_{0};
+    std::atomic<bool> game_over_{false};
+    std::atomic<bool> timer_running_{false};
+    std::thread timer_thread_;
+    int total_time_ = 0;
+    int swap_back_flash_ = 0;
 };
