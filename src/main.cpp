@@ -88,7 +88,9 @@ int main(int argc, char** argv )
 
     auto render_next_frame = [&game, &game_grid, &screen] {
         game.UpdateAnimationTimeline(screen);
-        return game_grid->Render();
+        auto next_frame = game_grid->Render();
+        game.TryInsertNextFrame(screen);
+        return next_frame;
     };
 
     auto main_layout = ftxui::Renderer(game_grid, [&] () -> ftxui::Element {

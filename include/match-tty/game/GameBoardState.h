@@ -89,6 +89,9 @@ public:
             --swap_back_flash_;
         }
 
+    }
+
+    void TryInsertNextFrame(ftxui::ScreenInteractive& screen) {
         if (is_animating || is_eliminating_ || swap_back_flash_ > 0) {
             screen.PostEvent(ftxui::Event::Custom);
         }
