@@ -7,21 +7,31 @@
 #include <match-tty/game/TimeBar.h>
 #include <match-tty/utils/Logger.h>
 #include <lyra/lyra.hpp>
-#include <vector>
-#include <chrono>
-#include <algorithm>
 #include <string>
 #include <memory>
 
-int main(int argc, char** argv )
-{
-    mtty::initLogger("match-tty.log");
-    QLOG_INFO("--- match-tty started ---");
 
+struct cli_options
+{
     std::size_t frame_dur_ms = 0;
-    bool disable_auto_swap_back = false;
+    bool auto_swap_back = false;
     int game_time_secs = 60;
+};
+
+enum class cli_parse_res: std::uint8_t
+{
+    happy,
+    help,
+    error
+};
+
+auto parse_cli( int argc, char** argv ) -> std::pair<cli_parse_res, cli_options> {
+    auto options{ cli_options{} };
+
+    auto&[frame_dur_ms, auto_swap_back, game_time_secs] = options;
+
     bool show_help = false;
+    bool disable_auto_swap_back = false;
 
     auto cli = lyra::cli()
         | lyra::opt( frame_dur_ms, "frame_dur_ms" )["-f"]["--frame-dur-ms"]("How long a frame is in ms. [Dev]")
@@ -33,24 +43,34 @@ int main(int argc, char** argv )
     auto result = cli.parse( { argc, argv } );
     if ( !result ) {
     	std::cerr << "Error in command line: " << result.message() << std::endl;
-        return 1;
+        return { cli_parse_res::error, {} };
     }
     if ( show_help ) {
         std::cout << cli << std::endl;
-        return 0;
+        return { cli_parse_res::help, {} };
     }
 
     // Clearer logic negating this flag
-    const bool auto_swap_back = !disable_auto_swap_back;
+    auto_swap_back = !disable_auto_swap_back;
+    return { cli_parse_res::happy, options };
+}
 
+int main(int argc, char** argv )
+{
+    mtty::initLogger("match-tty.log");
+    QLOG_INFO("--- match-tty started ---");
+
+    auto [ parse_result, options ] = parse_cli(argc, argv);
+    if (parse_result == cli_parse_res::error) return 1;
+    if (parse_result == cli_parse_res::help) return 0;
 
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
 
     // 1. Instantiation
-    GameBoardState game(frame_dur_ms, auto_swap_back);
+    GameBoardState game(options.frame_dur_ms, options.auto_swap_back);
     auto time_bar = std::make_unique<TimeBar>();
     game.setTimeBar(time_bar.get());
-    time_bar->start(game_time_secs, screen);
+    time_bar->start(options.game_time_secs, screen);
 
     // 2. Clean, non-cluttered callback registration hook setup
     auto game_grid = mtty::algo::make_interactive_grid(
