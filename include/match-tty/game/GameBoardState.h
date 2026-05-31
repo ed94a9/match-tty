@@ -30,10 +30,10 @@ private:
     struct AnimState {
         virtual ~AnimState() = default;
         virtual AnimType type() const = 0;
-        /// Advance one step. Returns true if more steps remain, false when done.
         virtual bool advance() = 0;
-        /// Render a single pin. Returns nullptr if this state doesn't touch (r,c).
         virtual ftxui::Element renderPin(size_t r, size_t c) const = 0;
+    protected:
+        ftxui::Element renderSwapPin(const GameBoardState& g, size_t r, size_t c, int frame) const;
     };
 
     struct SwapForwardState final : AnimState {
@@ -233,70 +233,7 @@ inline bool GameBoardState::SwapForwardState::advance() {
 
 inline ftxui::Element
 GameBoardState::SwapForwardState::renderPin(size_t r, size_t c) const {
-    bool is_src = (r == g.src_tile_.first && c == g.src_tile_.second);
-    bool is_tgt = (r == g.tgt_tile_.first && c == g.tgt_tile_.second);
-    bool in_src_col = (c == g.src_tile_.second);
-    bool in_tgt_col = (c == g.tgt_tile_.second);
-    bool h_swap = (g.src_tile_.second != g.tgt_tile_.second);
-    int sr = static_cast<int>(g.src_tile_.first);
-    int tr = static_cast<int>(g.tgt_tile_.first);
-    int sc = static_cast<int>(g.src_tile_.second);
-    int tc = static_cast<int>(g.tgt_tile_.second);
-
-    ftxui::Element pin = mtty::make_pin_anyway(g.board_state_[r][c]);
-
-    if (h_swap) {
-        if (tc > sc) {
-            if (in_tgt_col) pin = pin | ftxui::align_right;
-            else if (in_src_col) pin = ftxui::hbox({ pin, ftxui::filler() });
-        } else {
-            if (in_src_col) pin = pin | ftxui::align_right;
-            else if (in_tgt_col) pin = ftxui::hbox({ pin, ftxui::filler() });
-        }
-    } else {
-        if (tr > sr) {
-            if (r == static_cast<size_t>(tr))
-                pin = ftxui::vbox({ ftxui::filler(), pin });
-            else if (r == static_cast<size_t>(sr))
-                pin = ftxui::vbox({ pin, ftxui::filler() });
-        } else {
-            if (r == static_cast<size_t>(sr))
-                pin = ftxui::vbox({ ftxui::filler(), pin });
-            else if (r == static_cast<size_t>(tr))
-                pin = ftxui::vbox({ pin, ftxui::filler() });
-        }
-    }
-
-    // Animated sliding
-    if (is_src || is_tgt) {
-        int r_diff = tr - sr;
-        int c_diff = tc - sc;
-        int shift = frame;
-        int val = g.board_state_[r][c];
-
-        if (is_tgt) { r_diff = -r_diff; c_diff = -c_diff; }
-
-        if (c_diff != 0) {
-            pin = c_diff > 0
-                ? ftxui::hbox({ ftxui::text(std::string(shift, ' ')),
-                                mtty::make_pin_anyway(val),
-                                ftxui::text(std::string(4 - shift, ' ')) })
-                : ftxui::hbox({ ftxui::text(std::string(4 - shift, ' ')),
-                                mtty::make_pin_anyway(val),
-                                ftxui::text(std::string(shift, ' ')) });
-        } else if (r_diff != 0) {
-            pin = r_diff > 0
-                ? ftxui::vbox({ mtty::vertical_spacer(shift),
-                                mtty::make_pin_anyway(val),
-                                mtty::vertical_spacer(4 - shift) })
-                : ftxui::vbox({ mtty::vertical_spacer(4 - shift),
-                                mtty::make_pin_anyway(val),
-                                mtty::vertical_spacer(shift) });
-        }
-        return pin | ftxui::bgcolor(ftxui::Color::DarkBlue);
-    }
-
-    return pin;
+    return renderSwapPin(g, r, c, frame);
 }
 
 inline bool GameBoardState::SwapBackwardState::advance() {
@@ -306,69 +243,7 @@ inline bool GameBoardState::SwapBackwardState::advance() {
 
 inline ftxui::Element
 GameBoardState::SwapBackwardState::renderPin(size_t r, size_t c) const {
-    bool is_src = (r == g.src_tile_.first && c == g.src_tile_.second);
-    bool is_tgt = (r == g.tgt_tile_.first && c == g.tgt_tile_.second);
-    bool in_src_col = (c == g.src_tile_.second);
-    bool in_tgt_col = (c == g.tgt_tile_.second);
-    bool h_swap = (g.src_tile_.second != g.tgt_tile_.second);
-    int sr = static_cast<int>(g.src_tile_.first);
-    int tr = static_cast<int>(g.tgt_tile_.first);
-    int sc = static_cast<int>(g.src_tile_.second);
-    int tc = static_cast<int>(g.tgt_tile_.second);
-
-    ftxui::Element pin = mtty::make_pin_anyway(g.board_state_[r][c]);
-
-    if (h_swap) {
-        if (tc > sc) {
-            if (in_tgt_col) pin = pin | ftxui::align_right;
-            else if (in_src_col) pin = ftxui::hbox({ pin, ftxui::filler() });
-        } else {
-            if (in_src_col) pin = pin | ftxui::align_right;
-            else if (in_tgt_col) pin = ftxui::hbox({ pin, ftxui::filler() });
-        }
-    } else {
-        if (tr > sr) {
-            if (r == static_cast<size_t>(tr))
-                pin = ftxui::vbox({ ftxui::filler(), pin });
-            else if (r == static_cast<size_t>(sr))
-                pin = ftxui::vbox({ pin, ftxui::filler() });
-        } else {
-            if (r == static_cast<size_t>(sr))
-                pin = ftxui::vbox({ ftxui::filler(), pin });
-            else if (r == static_cast<size_t>(tr))
-                pin = ftxui::vbox({ pin, ftxui::filler() });
-        }
-    }
-
-    if (is_src || is_tgt) {
-        int r_diff = tr - sr;
-        int c_diff = tc - sc;
-        int shift = frame;
-        int val = g.board_state_[r][c];
-
-        if (is_tgt) { r_diff = -r_diff; c_diff = -c_diff; }
-
-        if (c_diff != 0) {
-            pin = c_diff > 0
-                ? ftxui::hbox({ ftxui::text(std::string(shift, ' ')),
-                                mtty::make_pin_anyway(val),
-                                ftxui::text(std::string(4 - shift, ' ')) })
-                : ftxui::hbox({ ftxui::text(std::string(4 - shift, ' ')),
-                                mtty::make_pin_anyway(val),
-                                ftxui::text(std::string(shift, ' ')) });
-        } else if (r_diff != 0) {
-            pin = r_diff > 0
-                ? ftxui::vbox({ mtty::vertical_spacer(shift),
-                                mtty::make_pin_anyway(val),
-                                mtty::vertical_spacer(4 - shift) })
-                : ftxui::vbox({ mtty::vertical_spacer(4 - shift),
-                                mtty::make_pin_anyway(val),
-                                mtty::vertical_spacer(shift) });
-        }
-        return pin | ftxui::bgcolor(ftxui::Color::DarkBlue);
-    }
-
-    return pin;
+    return renderSwapPin(g, r, c, frame);
 }
 
 inline bool GameBoardState::EliminateState::advance() {
@@ -410,6 +285,67 @@ GameBoardState::FlashState::renderPin(size_t r, size_t c) const {
         return mtty::make_pin_anyway(g.board_state_[r][c])
              | ftxui::bgcolor(ftxui::Color::Cyan);
     return {};
+}
+
+inline ftxui::Element
+GameBoardState::AnimState::renderSwapPin(const GameBoardState& g, size_t r, size_t c, int frame) const {
+    bool is_src = (r == g.src_tile_.first && c == g.src_tile_.second);
+    bool is_tgt = (r == g.tgt_tile_.first && c == g.tgt_tile_.second);
+    bool h_swap = (g.src_tile_.second != g.tgt_tile_.second);
+    int sr = static_cast<int>(g.src_tile_.first);
+    int tr = static_cast<int>(g.tgt_tile_.first);
+    int sc = static_cast<int>(g.src_tile_.second);
+    int tc = static_cast<int>(g.tgt_tile_.second);
+
+    ftxui::Element pin = mtty::make_pin_anyway(g.board_state_[r][c]);
+
+    if (h_swap) {
+        if (tc > sc) {
+            if (c == static_cast<size_t>(tc)) pin = pin | ftxui::align_right;
+            else if (c == static_cast<size_t>(sc)) pin = ftxui::hbox({ pin, ftxui::filler() });
+        } else {
+            if (c == static_cast<size_t>(sc)) pin = pin | ftxui::align_right;
+            else if (c == static_cast<size_t>(tc)) pin = ftxui::hbox({ pin, ftxui::filler() });
+        }
+    } else {
+        if (tr > sr) {
+            if (r == static_cast<size_t>(tr)) pin = ftxui::vbox({ ftxui::filler(), pin });
+            else if (r == static_cast<size_t>(sr)) pin = ftxui::vbox({ pin, ftxui::filler() });
+        } else {
+            if (r == static_cast<size_t>(sr)) pin = ftxui::vbox({ ftxui::filler(), pin });
+            else if (r == static_cast<size_t>(tr)) pin = ftxui::vbox({ pin, ftxui::filler() });
+        }
+    }
+
+    if (is_src || is_tgt) {
+        int r_diff = tr - sr;
+        int c_diff = tc - sc;
+        int shift = frame;
+        int val = g.board_state_[r][c];
+
+        if (is_tgt) { r_diff = -r_diff; c_diff = -c_diff; }
+
+        if (c_diff != 0) {
+            pin = c_diff > 0
+                ? ftxui::hbox({ ftxui::text(std::string(shift, ' ')),
+                                mtty::make_pin_anyway(val),
+                                ftxui::text(std::string(4 - shift, ' ')) })
+                : ftxui::hbox({ ftxui::text(std::string(4 - shift, ' ')),
+                                mtty::make_pin_anyway(val),
+                                ftxui::text(std::string(shift, ' ')) });
+        } else if (r_diff != 0) {
+            pin = r_diff > 0
+                ? ftxui::vbox({ mtty::vertical_spacer(shift),
+                                mtty::make_pin_anyway(val),
+                                mtty::vertical_spacer(4 - shift) })
+                : ftxui::vbox({ mtty::vertical_spacer(4 - shift),
+                                mtty::make_pin_anyway(val),
+                                mtty::vertical_spacer(shift) });
+        }
+        return pin | ftxui::bgcolor(ftxui::Color::DarkBlue);
+    }
+
+    return pin;
 }
 
 // ── Game logic ───────────────────────────────────────────────────────
