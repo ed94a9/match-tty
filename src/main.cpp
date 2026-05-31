@@ -86,8 +86,13 @@ int main(int argc, char** argv )
         }
     );
 
-    auto main_layout = ftxui::Renderer(game_grid, [&] () -> ftxui::Element {
+    auto render_next_frame = [&game, &game_grid, &screen] {
         game.UpdateAnimationTimeline(screen);
+        return game_grid->Render();
+    };
+
+    auto main_layout = ftxui::Renderer(game_grid, [&] () -> ftxui::Element {
+        const auto& to_render = render_next_frame();
 
         // --- grid area ---
         size_t fil_rows_cnt = game.isVerticalSwap() && game.isAnimating() ? 1 : 5;
@@ -95,7 +100,7 @@ int main(int argc, char** argv )
             ftxui::text("--- MATCH-TTY GRID ---") | ftxui::hcenter,
             ftxui::separator(),
             mtty::vertical_spacer(fil_rows_cnt),
-            game_grid->Render() | ftxui::hcenter,
+            to_render | ftxui::hcenter,
             mtty::vertical_spacer(fil_rows_cnt),
         });
 
