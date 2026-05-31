@@ -44,14 +44,16 @@ private:
     std::chrono::steady_clock::time_point last_frame_time_;
 
     TimeBar* time_bar_ = nullptr;
+    int time_gain_ = 1;
 
     // ── Internal helpers ─────────────────────────────────────────────
     void handleStateDone();
     void startElimination(bool from_swap = false);
     void finishElimination();
-    static int defaultGenerate(size_t, size_t);
 
 public:
+    static int defaultGenerate(size_t, size_t);
+
     // ── Public accessors for state classes ───────────────────────────
     int tileAt(size_t r, size_t c) const { return board_state_[r][c]; }
     std::pair<size_t, size_t> srcTile() const { return src_tile_; }
@@ -61,11 +63,13 @@ public:
 
     // ── Construction ─────────────────────────────────────────────────
     GameBoardState(int frame_dur_ms, bool auto_swap_back = false,
-                   GenerateCallback gen_cb = defaultGenerate)
+                   GenerateCallback gen_cb = defaultGenerate,
+                   int time_gain = 1)
         : frame_duration_(frame_dur_ms)
         , last_frame_time_(std::chrono::steady_clock::now())
         , generate_cb_(std::move(gen_cb))
         , auto_swap_back_(auto_swap_back)
+        , time_gain_(time_gain)
     {
         board_state_.resize(max_rows, std::vector<int>(max_cols, 0));
         for (size_t r = 0; r < max_rows; ++r)

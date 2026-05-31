@@ -43,6 +43,14 @@ public:
 
     int getRemainingTime() const { return time_remaining_.load(); }
     int getTotalTime() const { return total_time_; }
+    void addTime(int seconds) {
+        if (seconds <= 0) return;
+        int current = time_remaining_.load();
+        int total = total_time_;
+        int added = std::min(current + seconds, total);
+        time_remaining_.store(added);
+    }
+
     bool isOver() const { return game_over_.load(); }
 
     ftxui::Element Render(int max_height) const {

@@ -72,6 +72,10 @@ void GameBoardState::startElimination(bool from_swap) {
 }
 
 void GameBoardState::finishElimination() {
+    auto count = static_cast<int>(eliminating_pins_.size());
+    auto bonus = (count + 2) / 3 * time_gain_;
+    if (time_bar_) time_bar_->addTime(bonus);
+
     for (auto& pin : eliminating_pins_)
         board_state_[pin.row][pin.col] = generate_cb_(pin.row, pin.col);
     eliminating_pins_.clear();

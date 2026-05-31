@@ -16,6 +16,7 @@ struct cli_options
     std::size_t frame_dur_ms = 0;
     bool auto_swap_back = false;
     int game_time_secs = 60;
+    int time_gain = 1;
 };
 
 enum class cli_parse_res: std::uint8_t
@@ -28,7 +29,7 @@ enum class cli_parse_res: std::uint8_t
 auto parse_cli( int argc, char** argv ) -> std::pair<cli_parse_res, cli_options> {
     auto options{ cli_options{} };
 
-    auto&[frame_dur_ms, auto_swap_back, game_time_secs] = options;
+    auto&[frame_dur_ms, auto_swap_back, game_time_secs, time_gain] = options;
 
     bool show_help = false;
     bool disable_auto_swap_back = false;
@@ -37,6 +38,7 @@ auto parse_cli( int argc, char** argv ) -> std::pair<cli_parse_res, cli_options>
         | lyra::opt( frame_dur_ms, "frame_dur_ms" )["-f"]["--frame-dur-ms"]("How long a frame is in ms. [Dev]")
         | lyra::opt( disable_auto_swap_back )["--disable-auto-swap-back"]("If one swap does not trigger a match, automatically swap back. [Dev]")
         | lyra::opt( game_time_secs, "dur" )["-d"]["--dur"]("Time limit in seconds.")
+        | lyra::opt( time_gain, "time_gain" )["--time-gain"]("Multiplier for time gained per elimination batch. [Dev]")
         | lyra::help( show_help )
     ;
 
@@ -67,7 +69,8 @@ int main(int argc, char** argv )
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
 
     // 1. Instantiation
-    GameBoardState game(options.frame_dur_ms, options.auto_swap_back);
+    GameBoardState game(options.frame_dur_ms, options.auto_swap_back,
+                        GameBoardState::defaultGenerate, options.time_gain);
     auto time_bar = std::make_unique<TimeBar>();
     game.setTimeBar(time_bar.get());
     time_bar->start(options.game_time_secs, screen);
