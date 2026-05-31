@@ -100,7 +100,7 @@ auto make_pin() {
     }
 }
 
-auto make_pin( size_t cnt ) {
+inline auto make_pin( size_t cnt ) {
     if ( not (
         cnt <= 9 && cnt != 8 && cnt != 7 && cnt != 1
     )) {
@@ -123,7 +123,7 @@ auto make_pin( size_t cnt ) {
 }
 
 // Maps any integer to one of the 6 available visual pins {2,3,4,5,6,9}
-auto make_pin_anyway( std::int64_t any_int ) {
+inline auto make_pin_anyway( std::int64_t any_int ) {
     auto idx = any_int % 6;
     if (idx == 0) return make_pin<2>();
     if (idx == 1) return make_pin<3>();
