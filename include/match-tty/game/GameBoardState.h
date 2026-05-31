@@ -11,6 +11,7 @@
 #include <match-tty/assets/mj-8pins.h>
 #include <match-tty/algo/match.h>
 #include <match-tty/game/TimeBar.h>
+#include <match-tty/game/ScoreBar.h>
 #include <match-tty/utils/Logger.h>
 #include <match-tty/game/AnimState.h>
 
@@ -44,6 +45,7 @@ private:
     std::chrono::steady_clock::time_point last_frame_time_;
 
     TimeBar* time_bar_ = nullptr;
+    ScoreBar* score_bar_ = nullptr;
     int time_gain_ = 1;
 
     // ── Internal helpers ─────────────────────────────────────────────
@@ -138,6 +140,7 @@ public:
     }
 
     void setTimeBar(TimeBar* tb) { time_bar_ = tb; }
+    void setScoreBar(ScoreBar* sb) { score_bar_ = sb; }
 };
 
 

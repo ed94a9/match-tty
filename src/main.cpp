@@ -74,6 +74,8 @@ int main(int argc, char** argv )
     auto time_bar = std::make_unique<TimeBar>();
     game.setTimeBar(time_bar.get());
     time_bar->start(options.game_time_secs, screen);
+    auto score_bar = std::make_unique<ScoreBar>();
+    game.setScoreBar(score_bar.get());
 
     // 2. Clean, non-cluttered callback registration hook setup
     auto game_grid = mtty::algo::make_interactive_grid(
@@ -101,11 +103,19 @@ int main(int argc, char** argv )
 
         // --- grid area ---
         size_t fil_rows_cnt = game.isVerticalSwap() && game.isAnimating() ? 1 : 5;
+        ftxui::Element grid_and_bar = ftxui::vbox({
+            ftxui::hbox({score_bar->RenderGridPad(), to_render}),
+            score_bar->Render(),
+        });
         ftxui::Element grid_area = ftxui::vbox({
             ftxui::text("--- MATCH-TTY GRID ---") | ftxui::hcenter,
             ftxui::separator(),
             mtty::vertical_spacer(fil_rows_cnt),
-            to_render | ftxui::hcenter,
+            ftxui::hbox({
+                ftxui::filler(),
+                grid_and_bar,
+                ftxui::filler(),
+            }),
             mtty::vertical_spacer(fil_rows_cnt),
         });
 
