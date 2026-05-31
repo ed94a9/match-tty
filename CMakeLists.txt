@@ -14,6 +14,7 @@ find_package(fmt)
 find_package(ftxui)
 find_package(Catch2)
 find_package(quill)
+find_package(Lyra)
 
 add_library( internal-include INTERFACE )
 

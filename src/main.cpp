@@ -6,6 +6,7 @@
 #include <match-tty/game/GameBoardState.h>
 #include <match-tty/game/TimeBar.h>
 #include <match-tty/utils/Logger.h>
+#include <lyra/lyra.hpp>
 #include <vector>
 #include <chrono>
 #include <algorithm>
@@ -18,19 +19,30 @@ int main(int argc, char** argv )
     QLOG_INFO("--- match-tty started ---");
 
     std::size_t frame_dur_ms = 0;
-    bool auto_swap_back = false;
+    bool disable_auto_swap_back = false;
     int game_time_secs = 60;
+    bool show_help = false;
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg(argv[i]);
-        if (arg == "--auto-swap-back") {
-            auto_swap_back = true;
-        } else if (arg == "--time" && i + 1 < argc) {
-            game_time_secs = std::atoi(argv[++i]);
-        } else {
-            frame_dur_ms = std::atoi(arg.c_str());
-        }
+    auto cli = lyra::cli()
+        | lyra::opt( frame_dur_ms, "frame_dur_ms" )["-f"]["--frame-dur-ms"]("How long a frame is in ms. [Dev]")
+        | lyra::opt( disable_auto_swap_back )["--disable-auto-swap-back"]("If one swap does not trigger a match, automatically swap back. [Dev]")
+        | lyra::opt( game_time_secs, "dur" )["-d"]["--dur"]("Time limit in seconds.")
+        | lyra::help( show_help )
+    ;
+
+    auto result = cli.parse( { argc, argv } );
+    if ( !result ) {
+    	std::cerr << "Error in command line: " << result.message() << std::endl;
+        return 1;
     }
+    if ( show_help ) {
+        std::cout << cli << std::endl;
+        return 0;
+    }
+
+    // Clearer logic negating this flag
+    const bool auto_swap_back = !disable_auto_swap_back;
+
 
     auto screen = ftxui::ScreenInteractive::TerminalOutput();
 

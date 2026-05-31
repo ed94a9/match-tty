@@ -6,5 +6,6 @@ target_link_libraries( main PRIVATE
   ftxui::dom
   ftxui::component
   quill::quill
+  bfg::lyra
   internal-include
 )
