@@ -12,8 +12,8 @@ quill::Logger* logger();
 
 } // namespace mtty
 
-#define QLOG_TRACE(...)  QUILL_LOG_TRACE_L1(::mtty::logger(), ##__VA_ARGS__)
-#define QLOG_DEBUG(...)  QUILL_LOG_DEBUG(::mtty::logger(), ##__VA_ARGS__)
-#define QLOG_INFO(...)   QUILL_LOG_INFO(::mtty::logger(), ##__VA_ARGS__)
-#define QLOG_WARN(...)   QUILL_LOG_WARNING(::mtty::logger(), ##__VA_ARGS__)
-#define QLOG_ERROR(...)  QUILL_LOG_ERROR(::mtty::logger(), ##__VA_ARGS__)
+#define QLOG_TRACE(...)  do { if (auto* l = ::mtty::logger()) QUILL_LOG_TRACE_L1(l, ##__VA_ARGS__); } while(0)
+#define QLOG_DEBUG(...)  do { if (auto* l = ::mtty::logger()) QUILL_LOG_DEBUG(l, ##__VA_ARGS__); } while(0)
+#define QLOG_INFO(...)   do { if (auto* l = ::mtty::logger()) QUILL_LOG_INFO(l, ##__VA_ARGS__); } while(0)
+#define QLOG_WARN(...)   do { if (auto* l = ::mtty::logger()) QUILL_LOG_WARNING(l, ##__VA_ARGS__); } while(0)
+#define QLOG_ERROR(...)  do { if (auto* l = ::mtty::logger()) QUILL_LOG_ERROR(l, ##__VA_ARGS__); } while(0)

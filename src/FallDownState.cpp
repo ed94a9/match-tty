@@ -3,18 +3,18 @@
 #include <match-tty/utils/Logger.h>
 
 FallDownState::FallDownState(GameBoardState& g) : g(g),
-    final_board_(GameBoardState::max_rows, std::vector<int>(GameBoardState::max_cols, 0))
+    final_board_(g.rows(), std::vector<int>(g.cols(), 0))
 {
-    for (size_t c = 0; c < GameBoardState::max_cols; ++c) {
+    for (size_t c = 0; c < g.cols(); ++c) {
         std::vector<std::pair<size_t, int>> existing;
-        for (int r = static_cast<int>(GameBoardState::max_rows) - 1; r >= 0; --r) {
+        for (int r = static_cast<int>(g.rows()) - 1; r >= 0; --r) {
             int val = g.tileAt(static_cast<size_t>(r), c);
             if (val != 0)
                 existing.push_back({static_cast<size_t>(r), val});
         }
 
         size_t existing_cnt = existing.size();
-        size_t new_cnt = GameBoardState::max_rows - existing_cnt;
+        size_t new_cnt = g.rows() - existing_cnt;
 
         for (size_t i = 0; i < existing_cnt; ++i) {
             auto [orig_r, val] = existing[existing_cnt - 1 - i];

@@ -7,7 +7,9 @@ class ScoreBar
 {
 public:
     static constexpr int max_per_bar = 100;
-    static constexpr int bar_width = 95; // matches grid body width (19 cols × 5 chars)
+    static constexpr int chars_per_tile = 5;
+
+    ScoreBar(size_t cols = 19) : bar_width_(static_cast<int>(cols) * chars_per_tile) {}
 
     void addScore(int count) {
         score_ += count;
@@ -29,8 +31,8 @@ public:
     }
 
     ftxui::Element RenderBar() const {
-        int filled = (current_bar_score_ * bar_width) / max_per_bar;
-        int empty = bar_width - filled;
+        int filled = (current_bar_score_ * bar_width_) / max_per_bar;
+        int empty = bar_width_ - filled;
         auto color = barColor();
         return ftxui::hbox({
             ftxui::text(std::string(static_cast<size_t>(filled), ' ')) | ftxui::bgcolor(color),
@@ -47,6 +49,7 @@ public:
     }
 
 private:
+    int bar_width_;
     int score_ = 0;
     int current_bar_score_ = 0;
     int level_ = 0;

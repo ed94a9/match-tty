@@ -20,11 +20,11 @@ void GameBoardState::TriggerSwap(
         swap_timestamps_.pop_front();
 
     if (swap_timestamps_.size() >= 3 && time_bar_) {
-        time_bar_->deductTime(5);
-        alert_message_ = "3 SWAPS IN 1s. PENALTY! -5s";
+        time_bar_->deductTime(penalty_secs_);
+        alert_message_ = "PENALTY! -" + std::to_string(penalty_secs_) + "s";
         alert_start_time_ = now;
         swap_timestamps_.clear();
-        QLOG_INFO("Penalty: 3 swaps in 1s, -5s deducted");
+        QLOG_INFO("Penalty: 3 swaps in 1s, -{}s deducted", penalty_secs_);
     }
 
     // ── Initiate swap ────────────────────────────────────────────────

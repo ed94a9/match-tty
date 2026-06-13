@@ -19,9 +19,6 @@
 class GameBoardState
 {
 public:
-    static constexpr size_t max_rows = 7;
-    static constexpr size_t max_cols = 19;
-
     using GenerateCallback = std::function<int(size_t, size_t)>;
 
     struct ElimPin {
@@ -30,6 +27,9 @@ public:
     };
 
 private:
+    size_t rows_ = 7;
+    size_t cols_ = 19;
+
     // ── Data ─────────────────────────────────────────────────────────
     std::vector<std::vector<int>> board_state_;
     GenerateCallback generate_cb_;
@@ -48,6 +48,7 @@ private:
     TimeBar* time_bar_ = nullptr;
     ScoreBar* score_bar_ = nullptr;
     int time_gain_ = 1;
+    int penalty_secs_ = 5;
 
     // ── Swap penalty tracking ────────────────────────────────────────
     std::deque<std::chrono::steady_clock::time_point> swap_timestamps_;
@@ -64,6 +65,8 @@ public:
     static int defaultGenerate(size_t, size_t);
 
     // ── Public accessors for state classes ───────────────────────────
+    size_t rows() const { return rows_; }
+    size_t cols() const { return cols_; }
     int tileAt(size_t r, size_t c) const { return board_state_[r][c]; }
     int generateTile(size_t r, size_t c) { return generate_cb_(r, c); }
     std::pair<size_t, size_t> srcTile() const { return src_tile_; }
@@ -72,18 +75,22 @@ public:
     static constexpr int elimHoldTicks() { return elim_hold_ticks_; }
 
     // ── Construction ─────────────────────────────────────────────────
-    GameBoardState(int frame_dur_ms, bool auto_swap_back = false,
+    GameBoardState(size_t rows, size_t cols, int frame_dur_ms,
+                   bool auto_swap_back = false,
                    GenerateCallback gen_cb = defaultGenerate,
-                   int time_gain = 1)
-        : frame_duration_(frame_dur_ms)
+                   int time_gain = 1,
+                   int penalty_secs = 5)
+        : rows_(rows), cols_(cols)
+        , frame_duration_(frame_dur_ms)
         , last_frame_time_(std::chrono::steady_clock::now())
         , generate_cb_(std::move(gen_cb))
         , auto_swap_back_(auto_swap_back)
         , time_gain_(time_gain)
+        , penalty_secs_(penalty_secs)
     {
-        board_state_.resize(max_rows, std::vector<int>(max_cols, 0));
-        for (size_t r = 0; r < max_rows; ++r)
-            for (size_t c = 0; c < max_cols; ++c)
+        board_state_.resize(rows_, std::vector<int>(cols_, 0));
+        for (size_t r = 0; r < rows_; ++r)
+            for (size_t c = 0; c < cols_; ++c)
                 board_state_[r][c] = ((r * c) % 6) + 1;
         startElimination();
     }
