@@ -58,6 +58,7 @@ public:
 
     // ── Public accessors for state classes ───────────────────────────
     int tileAt(size_t r, size_t c) const { return board_state_[r][c]; }
+    int generateTile(size_t r, size_t c) { return generate_cb_(r, c); }
     std::pair<size_t, size_t> srcTile() const { return src_tile_; }
     std::pair<size_t, size_t> tgtTile() const { return tgt_tile_; }
     const std::vector<ElimPin>& eliminatingPins() const { return eliminating_pins_; }

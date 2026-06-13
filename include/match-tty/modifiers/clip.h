@@ -1,3 +1,4 @@
+#pragma once
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
@@ -45,7 +46,7 @@ namespace mtty {
         size_t c_end;
     };
 
-    ftxui::Element clip(const ftxui::Element& ele, size_t r_start, size_t r_end, size_t c_start, size_t c_end) {
+    inline ftxui::Element clip(const ftxui::Element& ele, size_t r_start, size_t r_end, size_t c_start, size_t c_end) {
         int target_height = static_cast<int>(r_end - r_start);
         int target_width  = static_cast<int>(c_end - c_start);
 
@@ -91,7 +92,7 @@ namespace mtty {
         return std::make_shared<SlicedNode>(target_width, target_height, std::move(captured_pixels));
     }
 
-    ftxui::Element operator| ( const ftxui::Element& ele, Clip clip_config ) {
+    inline ftxui::Element operator| ( const ftxui::Element& ele, Clip clip_config ) {
         return clip( ele, clip_config.r_start, clip_config.r_end, clip_config.c_start, clip_config.c_end );
     }
 

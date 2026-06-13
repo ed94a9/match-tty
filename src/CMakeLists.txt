@@ -1,4 +1,4 @@
-add_executable( main main.cpp Logger.cpp GameBoardState.cpp )
+add_executable( main main.cpp Logger.cpp GameBoardState.cpp FallDownState.cpp )
 
 target_link_libraries( main PRIVATE
   fmt::fmt

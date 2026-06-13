@@ -4,7 +4,7 @@
 
 class GameBoardState;
 
-enum class AnimType { SwapForward, SwapBackward, Eliminate, Flash };
+enum class AnimType { SwapForward, SwapBackward, Eliminate, Flash, FallDown };
 
 struct AnimState {
     virtual ~AnimState() = default;

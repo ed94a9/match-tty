@@ -3,6 +3,7 @@
 #include <match-tty/game/SwapBackwardState.h>
 #include <match-tty/game/EliminateState.h>
 #include <match-tty/game/FlashState.h>
+#include <match-tty/game/FallDownState.h>
 
 void GameBoardState::TriggerSwap(
     std::pair<size_t, size_t> source,
@@ -39,6 +40,13 @@ void GameBoardState::handleStateDone() {
     case AnimType::Eliminate: {
         current_state_.reset();
         finishElimination();
+        break;
+    }
+    case AnimType::FallDown: {
+        auto* fall = static_cast<FallDownState*>(current_state_.get());
+        board_state_ = fall->finalBoard();
+        current_state_.reset();
+        startElimination();
         break;
     }
     case AnimType::Flash: {
@@ -78,9 +86,10 @@ void GameBoardState::finishElimination() {
     if (score_bar_) score_bar_->addScore(count);
 
     for (auto& pin : eliminating_pins_)
-        board_state_[pin.row][pin.col] = generate_cb_(pin.row, pin.col);
+        board_state_[pin.row][pin.col] = 0;
     eliminating_pins_.clear();
-    startElimination();
+
+    current_state_ = std::make_unique<FallDownState>(*this);
 }
 
 int GameBoardState::defaultGenerate(size_t, size_t) {
