@@ -11,7 +11,7 @@
 namespace mtty {
 
     // A custom DOM Node that holds a pre-rendered grid fragment
-    class SlicedNode : public ftxui::Node {
+    class SlicedNode final: public ftxui::Node {
     public:
         SlicedNode(int width, int height, std::vector<std::vector<ftxui::Pixel>> pixels)
             : width_(width), height_(height), pixels_(std::move(pixels)) {}
@@ -41,6 +41,13 @@ namespace mtty {
         int width_;
         int height_;
         std::vector<std::vector<ftxui::Pixel>> pixels_;
+    };
+
+    struct Clip {
+        size_t r_start;
+        size_t r_end;
+        size_t c_start;
+        size_t c_end;
     };
 
     ftxui::Element clip(const ftxui::Element& ele, size_t r_start, size_t r_end, size_t c_start, size_t c_end) {
@@ -89,12 +96,14 @@ namespace mtty {
         return std::make_shared<SlicedNode>(target_width, target_height, std::move(captured_pixels));
     }
 
+    ftxui::Element operator| ( const ftxui::Element& ele, Clip clip_config ) {
+        return clip( ele, clip_config.r_start, clip_config.r_end, clip_config.c_start, clip_config.c_end );
+    }
+
 }
 
 int main() {
-    auto pin9 = mtty::make_pin_anyway(9);
-
-    auto pin9_clipped = mtty::clip(pin9, 0, 2, 0, 5);
+    auto pin9_clipped = mtty::make_pin_anyway(9) | mtty::Clip( 0, 2, 0, 5 );
 
     auto screen = ftxui::Screen::Create(
       ftxui::Dimension::Fit(pin9_clipped),
