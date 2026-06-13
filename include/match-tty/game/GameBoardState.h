@@ -77,7 +77,7 @@ public:
         board_state_.resize(max_rows, std::vector<int>(max_cols, 0));
         for (size_t r = 0; r < max_rows; ++r)
             for (size_t c = 0; c < max_cols; ++c)
-                board_state_[r][c] = (r * c) % 6;
+                board_state_[r][c] = ((r * c) % 6) + 1;
         startElimination();
     }
 

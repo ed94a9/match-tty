@@ -45,6 +45,7 @@ void GameBoardState::handleStateDone() {
     case AnimType::FallDown: {
         auto* fall = static_cast<FallDownState*>(current_state_.get());
         board_state_ = fall->finalBoard();
+        QLOG_INFO("FallDown complete, final board applied");
         current_state_.reset();
         startElimination();
         break;
@@ -70,7 +71,7 @@ void GameBoardState::startElimination(bool from_swap) {
         return;
     }
 
-    QLOG_INFO("Found {} matched tiles, eliminating...", matched.size());
+    QLOG_INFO("Found {} matched tiles, eliminating... (from_swap={})", matched.size(), from_swap);
 
     eliminating_pins_.clear();
     for (auto& [r, c] : matched)
@@ -85,6 +86,8 @@ void GameBoardState::finishElimination() {
     if (time_bar_) time_bar_->addTime(bonus);
     if (score_bar_) score_bar_->addScore(count);
 
+    QLOG_INFO("finishElimination: {} pins eliminated, bonus time={}", count, bonus);
+
     for (auto& pin : eliminating_pins_)
         board_state_[pin.row][pin.col] = 0;
     eliminating_pins_.clear();
@@ -94,6 +97,6 @@ void GameBoardState::finishElimination() {
 
 int GameBoardState::defaultGenerate(size_t, size_t) {
     static std::mt19937 rng{std::random_device{}()};
-    static std::uniform_int_distribution<int> dist(0, 5);
+    static std::uniform_int_distribution<int> dist(1, 6);
     return dist(rng);
 }

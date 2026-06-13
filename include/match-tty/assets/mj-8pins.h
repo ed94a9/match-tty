@@ -124,7 +124,8 @@ inline auto make_pin( size_t cnt ) {
 
 // Maps any integer to one of the 6 available visual pins {2,3,4,5,6,9}
 inline auto make_pin_anyway( std::int64_t any_int ) {
-    auto idx = any_int % 6;
+    if (any_int <= 0) return make_pin<2>();
+    auto idx = (any_int - 1) % 6;
     if (idx == 0) return make_pin<2>();
     if (idx == 1) return make_pin<3>();
     if (idx == 2) return make_pin<4>();
@@ -136,7 +137,8 @@ inline auto make_pin_anyway( std::int64_t any_int ) {
 // Center pixel inside a border that has moved one pixel inward (surrounding the
 // inner 3×3 of the original 5×5 footprint). Used for elimination frame 0.
 inline ftxui::Element make_pin_center_only(std::int64_t any_int) {
-    auto idx = any_int % 6;
+    if (any_int <= 0) any_int = 1;
+    auto idx = (any_int - 1) % 6;
     static const std::vector<std::vector<int>> masks = {
         {1,0,0, 0,0,0, 0,0,1},
         {1,0,0, 0,1,0, 0,0,1},

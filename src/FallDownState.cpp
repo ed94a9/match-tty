@@ -1,12 +1,12 @@
 #include <match-tty/game/FallDownState.h>
 #include <match-tty/game/GameBoardState.h>
+#include <match-tty/utils/Logger.h>
 
 FallDownState::FallDownState(GameBoardState& g) : g(g),
     final_board_(GameBoardState::max_rows, std::vector<int>(GameBoardState::max_cols, 0))
 {
     for (size_t c = 0; c < GameBoardState::max_cols; ++c) {
-        // Collect non-zero pins from bottom to top with original row
-        std::vector<std::pair<size_t, int>> existing;  // (original_row, value)
+        std::vector<std::pair<size_t, int>> existing;
         for (int r = static_cast<int>(GameBoardState::max_rows) - 1; r >= 0; --r) {
             int val = g.tileAt(static_cast<size_t>(r), c);
             if (val != 0)
@@ -16,8 +16,6 @@ FallDownState::FallDownState(GameBoardState& g) : g(g),
         size_t existing_cnt = existing.size();
         size_t new_cnt = GameBoardState::max_rows - existing_cnt;
 
-        // Build final column: new pins at top, existing pins at bottom
-        // Existing pins are stored bottom-up, so reverse iteration for top-down
         for (size_t i = 0; i < existing_cnt; ++i) {
             auto [orig_r, val] = existing[existing_cnt - 1 - i];
             size_t tgt_r = new_cnt + i;
@@ -27,10 +25,11 @@ FallDownState::FallDownState(GameBoardState& g) : g(g),
             int tgt_px = static_cast<int>(tgt_r * 5);
             if (src_px != tgt_px) {
                 moves_.push_back({src_px, tgt_px, c, val});
+                QLOG_INFO("  [col {}] pin val={} falls {}->{} (px {}->{})",
+                          c, val, orig_r, tgt_r, src_px, tgt_px);
             }
         }
 
-        // New pins at top — they fall in from above the grid
         for (size_t i = 0; i < new_cnt; ++i) {
             size_t tgt_r = i;
             int val = g.generateTile(tgt_r, c);
@@ -39,12 +38,15 @@ FallDownState::FallDownState(GameBoardState& g) : g(g),
             int src_px = -static_cast<int>((new_cnt - i)) * 5;
             int tgt_px = static_cast<int>(tgt_r * 5);
             moves_.push_back({src_px, tgt_px, c, val});
+            QLOG_INFO("  [col {}] new val={} falls from above->{} (px {}->{})",
+                      c, val, tgt_r, src_px, tgt_px);
         }
     }
 
     moved_ = !moves_.empty();
+    QLOG_INFO("FallDownState created: {} moves", moves_.size());
     if (!moved_)
-        frame_ = total_frames_;  // skip animation immediately
+        frame_ = total_frames_;
 }
 
 bool FallDownState::advance() {
