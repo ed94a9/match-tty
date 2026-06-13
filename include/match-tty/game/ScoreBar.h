@@ -43,7 +43,7 @@ public:
     }
 
     ftxui::Element Render() const {
-        return ftxui::hbox({RenderLabel(), RenderBar()});
+        return RenderBar();
     }
 
 private:

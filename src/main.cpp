@@ -104,8 +104,10 @@ int main(int argc, char** argv )
         // --- grid area ---
         size_t fil_rows_cnt = game.isVerticalSwap() && game.isAnimating() ? 1 : 5;
         ftxui::Element grid_and_bar = ftxui::vbox({
-            ftxui::hbox({score_bar->RenderGridPad(), to_render}),
+            to_render,
             score_bar->Render(),
+            ftxui::text("Score: " + std::to_string(score_bar->getScore()))
+                | ftxui::hcenter,
         });
         ftxui::Element grid_area = ftxui::vbox({
             ftxui::text("--- MATCH-TTY ---") | ftxui::hcenter,
