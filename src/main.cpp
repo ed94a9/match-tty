@@ -118,11 +118,11 @@ int main(int argc, char** argv )
         ftxui::Element grid_and_bar = ftxui::vbox({
             to_render,
             score_bar->Render(),
-            ftxui::text("Score: " + std::to_string(score_bar->getScore()))
+            ftxui::text("🏆 Score: " + std::to_string(score_bar->getScore()))
                 | ftxui::hcenter,
         });
         ftxui::Element grid_area = ftxui::vbox({
-            ftxui::text("--- MATCH-TTY ---") | ftxui::hcenter,
+            ftxui::text("🎮 --- MATCH-TTY --- 🎮") | ftxui::hcenter,
             ftxui::separator(),
             mtty::vertical_spacer(fil_rows_cnt),
             ftxui::hbox({
@@ -146,7 +146,7 @@ int main(int argc, char** argv )
                     return ftxui::text("  " + alert + "  ") | ftxui::bold
                         | ftxui::color(ftxui::Color::YellowLight) | ftxui::hcenter;
                 if (time_bar->isOver())
-                    return ftxui::text("  GAME OVER  ") | ftxui::bold
+                    return ftxui::text("💀 GAME OVER") | ftxui::bold
                         | ftxui::color(ftxui::Color::RedLight) | ftxui::hcenter;
                 return ftxui::text("");
             }(),
