@@ -108,7 +108,7 @@ int main(int argc, char** argv )
             score_bar->Render(),
         });
         ftxui::Element grid_area = ftxui::vbox({
-            ftxui::text("--- MATCH-TTY GRID ---") | ftxui::hcenter,
+            ftxui::text("--- MATCH-TTY ---") | ftxui::hcenter,
             ftxui::separator(),
             mtty::vertical_spacer(fil_rows_cnt),
             ftxui::hbox({
@@ -126,10 +126,16 @@ int main(int argc, char** argv )
                 time_bar->Render(GameBoardState::max_rows * 3),
                 ftxui::filler(),
             }),
-            time_bar->isOver()
-                ? ftxui::text("  GAME OVER  ") | ftxui::bold
-                    | ftxui::color(ftxui::Color::RedLight) | ftxui::hcenter
-                : ftxui::text(""),
+            [&]() -> ftxui::Element {
+                std::string alert = game.getAlert();
+                if (!alert.empty())
+                    return ftxui::text("  " + alert + "  ") | ftxui::bold
+                        | ftxui::color(ftxui::Color::YellowLight) | ftxui::hcenter;
+                if (time_bar->isOver())
+                    return ftxui::text("  GAME OVER  ") | ftxui::bold
+                        | ftxui::color(ftxui::Color::RedLight) | ftxui::hcenter;
+                return ftxui::text("");
+            }(),
         }) | ftxui::border;
     });
 

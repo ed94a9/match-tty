@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <deque>
 #include <chrono>
 #include <utility>
 #include <functional>
@@ -47,6 +48,12 @@ private:
     TimeBar* time_bar_ = nullptr;
     ScoreBar* score_bar_ = nullptr;
     int time_gain_ = 1;
+
+    // ── Swap penalty tracking ────────────────────────────────────────
+    std::deque<std::chrono::steady_clock::time_point> swap_timestamps_;
+    std::string alert_message_;
+    std::chrono::steady_clock::time_point alert_start_time_;
+    int alert_duration_secs_ = 1;
 
     // ── Internal helpers ─────────────────────────────────────────────
     void handleStateDone();
@@ -142,6 +149,16 @@ public:
 
     void setTimeBar(TimeBar* tb) { time_bar_ = tb; }
     void setScoreBar(ScoreBar* sb) { score_bar_ = sb; }
+
+    // ── Alert / penalty public interface ─────────────────────────────
+    std::string getAlert() const {
+        if (alert_message_.empty()) return {};
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - alert_start_time_).count();
+        if (elapsed >= alert_duration_secs_)
+            return {};
+        return alert_message_;
+    }
 };
 
 

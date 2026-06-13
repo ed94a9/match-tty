@@ -50,6 +50,11 @@ public:
         int added = std::min(current + seconds, total);
         time_remaining_.store(added);
     }
+    void deductTime(int seconds) {
+        if (seconds <= 0) return;
+        int current = time_remaining_.load();
+        time_remaining_.store(std::max(0, current - seconds));
+    }
 
     bool isOver() const { return game_over_.load(); }
 

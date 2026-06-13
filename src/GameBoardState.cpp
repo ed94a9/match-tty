@@ -12,6 +12,22 @@ void GameBoardState::TriggerSwap(
     if ((time_bar_ && time_bar_->isOver()) || current_state_)
         return;
 
+    // ── Swap rate penalty check ──────────────────────────────────────
+    auto now = std::chrono::steady_clock::now();
+    swap_timestamps_.push_back(now);
+    auto cutoff = now - std::chrono::seconds(1);
+    while (!swap_timestamps_.empty() && swap_timestamps_.front() < cutoff)
+        swap_timestamps_.pop_front();
+
+    if (swap_timestamps_.size() >= 3 && time_bar_) {
+        time_bar_->deductTime(5);
+        alert_message_ = "3 SWAPS IN 1s. PENALTY! -5s";
+        alert_start_time_ = now;
+        swap_timestamps_.clear();
+        QLOG_INFO("Penalty: 3 swaps in 1s, -5s deducted");
+    }
+
+    // ── Initiate swap ────────────────────────────────────────────────
     src_tile_ = source;
     tgt_tile_ = target;
 
