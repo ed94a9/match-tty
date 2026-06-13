@@ -28,7 +28,7 @@ inline ftxui::Element make_inner_dots(std::vector<int> mask, ftxui::Color color_
     return ftxui::vbox(std::move(lines));
 }
 
-inline ftxui::Element create_mh_pins(std::vector<int> mask, ftxui::Color color_val, int rows = 3, int cols = 3) {
+inline ftxui::Element create_mh_pins(std::vector<int> mask, ftxui::Color color_val) {
     return make_inner_dots(std::move(mask), color_val) | ftxui::border ;
 }
 

@@ -3,9 +3,17 @@ target_link_libraries( example1 PRIVATE
   ftxui::screen
   ftxui::dom
   ftxui::component)
-add_executable( example_draw example_draw.cpp )
 
+add_executable( example_draw example_draw.cpp )
 target_link_libraries( example_draw PRIVATE
+  ftxui::screen
+  ftxui::dom
+  ftxui::component
+  internal-include
+  fmt::fmt )
+
+add_executable( example_slice slice.cpp )
+target_link_libraries( example_slice PRIVATE
   ftxui::screen
   ftxui::dom
   ftxui::component
