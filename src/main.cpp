@@ -179,6 +179,11 @@ class MainComponent : public ftxui::ComponentBase {
             ftxui::vbox({
                 banner,
                 ftxui::separator(),
+                // ftxui::text("Match 3 or more same pins to trigger an elimination.") | ftxui::hcenter | ftxui::dim,
+                // ftxui::text("Use arrow keys for navigation. <space> to ping the start pin and arrow key again the determine the neighbour pin to swap.") | ftxui::hcenter | ftxui::dim,
+                // ftxui::text("Elimination of 1 pin = 1 score + some time bump. 3 bad swaps = 5 seconds of penalty.") | ftxui::hcenter | ftxui::dim,
+                // ftxui::text("") | ftxui::hcenter | ftxui::dim,
+                ftxui::text("← → or h/l to select · ENTER to confirm") | ftxui::hcenter | ftxui::dim,
                 buttons,
             }) | ftxui::vcenter,
         }) | ftxui::border;
