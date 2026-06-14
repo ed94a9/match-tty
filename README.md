@@ -6,13 +6,19 @@ Swap adjacent pin tiles to match rows or columns of 3+ identical tiles, earn poi
 
 ![Screenshot](include/match-tty/assets/Screenshot.png)
 
+## Why a terminal based match game ?
+
+Because you can fire up one anywhere in the terminal. And it's an era of TUIs!
+
+Boring waiting for your agent to work on something? Create a tmux pane, fire up a game and get the work done while you are playing!
+
 ## Features
 
-- **6 tile types** rendered as Mahjong-like dot patterns
-- **Smooth animations**: swap, eliminate, fall-down (gravity), and flash effects
-- **Chain reactions**: matches trigger cascading eliminations
-- **Countdown timer** with color-coded time bar
-- **Scoring** with level progression
+- **6 tile types** rendered as Mahjong-like dot patterns.
+- **Smooth animations**: swap, eliminate, fall-down (gravity), and flash effects.
+- **Chain reactions**: matches trigger cascading eliminations.
+- **Scoring** with level progression.
+- **Portable**: Barely any binary dependency once built, which means it's largely portable where ever you've got a terminal to work on.
 
 ## Usage
 
