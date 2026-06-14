@@ -14,7 +14,7 @@ auto parse_cli(int argc, char** argv) -> std::pair<cli_parse_res, cli_options>
     auto cli = lyra::cli()
         | lyra::opt( rows, "rows" )["--rows"]("Number of grid rows.")
         | lyra::opt( cols, "cols" )["--cols"]("Number of grid columns.")
-        | lyra::opt( frame_dur_ms, "frame_dur_ms" )["-f"]["--frame-dur-ms"]("How long a frame is in ms. [Dev]")
+        | lyra::opt( frame_dur_ms, "frame_dur_ms" )["-f"]["--frame-dur-ms"]("How long a frame is in ms.")
         | lyra::opt( disable_auto_swap_back )["--disable-auto-swap-back"]("If one swap does not trigger a match, automatically swap back. [Dev]")
         | lyra::opt( game_time_secs, "dur" )["-d"]["--dur"]("Time limit in seconds.")
         | lyra::opt( time_gain, "time_gain" )["--time-gain"]("Multiplier for time gained per elimination batch. [Dev]")

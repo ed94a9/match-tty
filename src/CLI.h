@@ -8,7 +8,7 @@ struct cli_options
 {
     std::size_t rows = 7;
     std::size_t cols = 19;
-    std::size_t frame_dur_ms = 0;
+    std::size_t frame_dur_ms = 10;
     bool auto_swap_back = false;
     int game_time_secs = 60;
     int time_gain = 1;
