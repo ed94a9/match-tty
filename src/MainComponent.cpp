@@ -1,6 +1,6 @@
-#include "MainComponent.h"
-#include "Banners.h"
-#include "CLI.h"
+#include <match-tty/MainComponent.h>
+#include <match-tty/Banners.h>
+#include <match-tty/CLI.h>
 
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>

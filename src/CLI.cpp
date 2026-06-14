@@ -1,4 +1,4 @@
-#include "CLI.h"
+#include <match-tty/CLI.h>
 
 #include <iostream>
 #include <lyra/lyra.hpp>

@@ -6,7 +6,7 @@
 #include <match-tty/game/ScoreBar.h>
 #include <match-tty/game/TimeBar.h>
 #include <memory>
-#include "CLI.h"
+#include <match-tty/CLI.h>
 
 enum class GameState { WELCOME, PLAYING, GAME_OVER };
 

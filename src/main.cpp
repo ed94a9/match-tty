@@ -1,5 +1,5 @@
-#include "CLI.h"
-#include "MainComponent.h"
+#include <match-tty/CLI.h>
+#include <match-tty/MainComponent.h>
 
 #include <ftxui/component/screen_interactive.hpp>
 #include <match-tty/utils/Logger.h>
