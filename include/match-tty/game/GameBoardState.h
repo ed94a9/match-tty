@@ -15,6 +15,7 @@
 #include <match-tty/game/ScoreBar.h>
 #include <match-tty/utils/Logger.h>
 #include <match-tty/game/AnimState.h>
+#include <match-tty/game/GridGenerator.h>
 
 class GameBoardState
 {
@@ -79,7 +80,8 @@ public:
                    bool auto_swap_back = false,
                    GenerateCallback gen_cb = defaultGenerate,
                    int time_gain = 1,
-                   int penalty_secs = 5)
+                   int penalty_secs = 5,
+                   std::unique_ptr<GridGenerator> grid_gen = {})
         : rows_(rows), cols_(cols)
         , frame_duration_(frame_dur_ms)
         , last_frame_time_(std::chrono::steady_clock::now())
@@ -88,10 +90,9 @@ public:
         , time_gain_(time_gain)
         , penalty_secs_(penalty_secs)
     {
-        board_state_.resize(rows_, std::vector<int>(cols_, 0));
-        for (size_t r = 0; r < rows_; ++r)
-            for (size_t c = 0; c < cols_; ++c)
-                board_state_[r][c] = ((r * c) % 6) + 1;
+        if (!grid_gen)
+            grid_gen = std::make_unique<MatchFreeGridGenerator>();
+        board_state_ = grid_gen->generate(rows_, cols_);
         startElimination();
     }
 
