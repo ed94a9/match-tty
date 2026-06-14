@@ -9,7 +9,9 @@
 #include <lyra/lyra.hpp>
 #include <string>
 #include <memory>
+#include <sstream>
 
+enum class GameState { WELCOME, PLAYING, GAME_OVER };
 
 struct cli_options
 {
@@ -23,16 +25,10 @@ struct cli_options
     std::string log_file;
 };
 
-enum class cli_parse_res: std::uint8_t
-{
-    happy,
-    help,
-    error
-};
+enum class cli_parse_res: std::uint8_t { happy, help, error };
 
 auto parse_cli( int argc, char** argv ) -> std::pair<cli_parse_res, cli_options> {
     auto options{ cli_options{} };
-
     auto&[rows, cols, frame_dur_ms, auto_swap_back, game_time_secs, time_gain, penalty_secs, log_file] = options;
 
     bool show_help = false;
@@ -52,7 +48,7 @@ auto parse_cli( int argc, char** argv ) -> std::pair<cli_parse_res, cli_options>
 
     auto result = cli.parse( { argc, argv } );
     if ( !result ) {
-    	std::cerr << "Error in command line: " << result.message() << std::endl;
+        std::cerr << "Error in command line: " << result.message() << std::endl;
         return { cli_parse_res::error, {} };
     }
     if ( show_help ) {
@@ -60,67 +56,131 @@ auto parse_cli( int argc, char** argv ) -> std::pair<cli_parse_res, cli_options>
         return { cli_parse_res::help, {} };
     }
 
-    // Clearer logic negating this flag
     auto_swap_back = !disable_auto_swap_back;
     return { cli_parse_res::happy, options };
 }
 
-int main(int argc, char** argv )
-{
-    auto [ parse_result, options ] = parse_cli(argc, argv);
-    if (parse_result == cli_parse_res::error) return 1;
-    if (parse_result == cli_parse_res::help) return 0;
+static const auto welcome_banner = R"(
+  ___ ___       ___ ___                     ___ ___       ___ ___     
+     /  /\         /  /\      ___ ___          /  /\         /  /\    
+    /  /::|       /  /::\        /__/\        /  /::\       /  /:/    
+   /  /:|:|      /  /:/\:\       \  \:\      /  /:/\:\     /  /:/     
+  /  /:/|:|__   /  /::\ \:\       \__\:\    /  /:/  \:\   /  /::\ ___ 
+ /__/:/_|::::\ /__/:/\:\_\:\      /  /::\  /__/:/ \  \:\ /__/:/\:\  /\
+ \__\/  /~~/:/ \__\/  \:\/:/     /  /:/\:\ \  \:\  \__\/ \__\/  \:\/:/
+       /  /:/       \__\::/     /  /:/__\/  \  \:\            \__\::/ 
+      /  /:/        /  /:/     /__/:/        \  \:\           /  /:/  
+     /__/:/        /__/:/      \__\/          \  \:\         /__/:/   
+     \__\/         \__\/                       \__\/         \__\/    
+                                          
+  ___ ___       ___ ___       ___ __      
+     /__/\         /__/\         |  |\    
+     \  \:\        \  \:\        |  |:|   
+      \__\:\        \__\:\       |  |:|   
+      /  /::\       /  /::\      |__|:|__ 
+     /  /:/\:\     /  /:/\:\     /  /::::\
+    /  /:/__\/    /  /:/__\/    /  /:/~~~~
+   /__/:/        /__/:/        /__/:/     
+   \__\/         \__\/         \__\/      
+)";
 
-    if (!options.log_file.empty()) {
-        mtty::initLogger(options.log_file);
-        QLOG_INFO("--- match-tty started ---");
+static const auto gameover_banner_line1 = R"(
+   _________    __  _________
+  / ____/   |  /  |/  / ____/
+ / / __/ /| | / /|_/ / __/   
+/ /_/ / ___ |/ /  / / /___   
+\____/_/  |_/_/  /_/_____/   
+)";
+
+static const auto gameover_banner_line2 = R"(
+   ____ _    ____________ 
+  / __ \ |  / / ____/ __ \
+ / / / / | / / __/ / /_/ /
+/ /_/ /| |/ / /___/ _, _/ 
+\____/ |___/_____/_/ |_|  
+)";
+
+ftxui::Element renderBanner(const std::string& art, ftxui::Color color) {
+    std::istringstream stream(art);
+    std::string line;
+    ftxui::Elements lines;
+    while (std::getline(stream, line))
+        lines.push_back(ftxui::text(line) | ftxui::hcenter);
+    return ftxui::vbox(std::move(lines)) | ftxui::color(color);
+}
+
+class MainComponent : public ftxui::ComponentBase {
+    ftxui::ScreenInteractive& screen_;
+    cli_options options_;
+    GameState state_{GameState::WELCOME};
+
+    std::unique_ptr<GameBoardState> game_;
+    std::unique_ptr<TimeBar> time_bar_;
+    std::unique_ptr<ScoreBar> score_bar_;
+    ftxui::Component game_grid_;
+    bool was_over_ = false;
+
+    void startGame() {
+        time_bar_.reset();
+        game_ = std::make_unique<GameBoardState>(
+            options_.rows, options_.cols, options_.frame_dur_ms,
+            options_.auto_swap_back,
+            GameBoardState::defaultGenerate, options_.time_gain,
+            options_.penalty_secs);
+        time_bar_ = std::make_unique<TimeBar>();
+        game_->setTimeBar(time_bar_.get());
+        time_bar_->start(options_.game_time_secs, screen_);
+        score_bar_ = std::make_unique<ScoreBar>(options_.cols);
+        game_->setScoreBar(score_bar_.get());
+
+        if (!game_grid_) {
+            game_grid_ = mtty::algo::make_interactive_grid(
+                game_->rows(), game_->cols(),
+                [this](size_t r, size_t c, bool focused, bool a) {
+                    return game_->RenderPin(r, c, focused, a);
+                },
+                [this](std::pair<size_t, size_t> src, std::pair<size_t, size_t> tgt) {
+                    game_->TriggerSwap(src, tgt, screen_);
+                });
+            Add(game_grid_);
+        }
+        was_over_ = false;
+        state_ = GameState::PLAYING;
     }
 
-    auto screen = ftxui::ScreenInteractive::TerminalOutput();
+    ftxui::Element renderWelcome() {
+        return ftxui::vbox({
+            ftxui::filler(),
+            renderBanner(welcome_banner, ftxui::Color::YellowLight),
+            ftxui::separator(),
+            ftxui::filler(),
+            ftxui::text("Press ENTER or SPACE to start") | ftxui::hcenter | ftxui::bold,
+            ftxui::text("Press Q to quit") | ftxui::hcenter | ftxui::dim,
+            ftxui::filler(),
+        }) | ftxui::border;
+    }
 
-    // 1. Instantiation
-    GameBoardState game(options.rows, options.cols, options.frame_dur_ms,
-                        options.auto_swap_back,
-                        GameBoardState::defaultGenerate, options.time_gain,
-                        options.penalty_secs);
-    auto time_bar = std::make_unique<TimeBar>();
-    game.setTimeBar(time_bar.get());
-    time_bar->start(options.game_time_secs, screen);
-    auto score_bar = std::make_unique<ScoreBar>(options.cols);
-    game.setScoreBar(score_bar.get());
-
-    // 2. Clean, non-cluttered callback registration hook setup
-    auto game_grid = mtty::algo::make_interactive_grid(
-        game.rows(),
-        game.cols(),
-        // Direct passthrough renderer lambda
-        [&](size_t r, size_t c, bool focused, bool activated) {
-            return game.RenderPin(r, c, focused, activated);
-        },
-        // Direct passthrough swap handler lambda
-        [&](std::pair<size_t, size_t> src, std::pair<size_t, size_t> tgt) {
-            game.TriggerSwap(src, tgt, screen);
+    ftxui::Element renderPlaying() {
+        if (time_bar_->getRemainingTime() <= 0 && !was_over_) {
+            was_over_ = true;
+            time_bar_->stop();
+            state_ = GameState::GAME_OVER;
+            return renderGameOver();
         }
-    );
 
-    auto render_next_frame = [&game, &game_grid, &screen] {
-        game.UpdateAnimationTimeline(screen);
-        auto next_frame = game_grid->Render();
-        game.TryInsertNextFrame(screen);
-        return next_frame;
-    };
+        auto now = std::chrono::steady_clock::now();
+        game_->UpdateAnimationTimeline(screen_);
+        auto grid_elem = game_grid_->Render();
+        game_->TryInsertNextFrame(screen_);
 
-    auto main_layout = ftxui::Renderer(game_grid, [&] () -> ftxui::Element {
-        const auto& to_render = render_next_frame();
-
-        // --- grid area ---
-        size_t fil_rows_cnt = game.isVerticalSwap() && game.isAnimating() ? 1 : 5;
+        size_t fil_rows_cnt = game_->isVerticalSwap() && game_->isAnimating() ? 1 : 5;
         ftxui::Element grid_and_bar = ftxui::vbox({
-            to_render,
-            score_bar->Render(),
-            ftxui::text("🏆 Score: " + std::to_string(score_bar->getScore()))
+            grid_elem,
+            score_bar_->Render(),
+            ftxui::text("🏆 Score: " + std::to_string(score_bar_->getScore()))
                 | ftxui::hcenter,
         });
+
         ftxui::Element grid_area = ftxui::vbox({
             ftxui::text("🎮 --- MATCH-TTY --- 🎮") | ftxui::hcenter,
             ftxui::separator(),
@@ -137,24 +197,89 @@ int main(int argc, char** argv )
             ftxui::hbox({
                 ftxui::filler(),
                 grid_area,
-                time_bar->Render(static_cast<int>(game.rows() * 3)),
+                time_bar_->Render(static_cast<int>(game_->rows() * 3)),
                 ftxui::filler(),
             }),
             [&]() -> ftxui::Element {
-                std::string alert = game.getAlert();
+                std::string alert = game_->getAlert();
                 if (!alert.empty())
                     return ftxui::text("  " + alert + "  ") | ftxui::bold
                         | ftxui::color(ftxui::Color::YellowLight) | ftxui::hcenter;
-                if (time_bar->isOver())
-                    return ftxui::text("💀 GAME OVER") | ftxui::bold
-                        | ftxui::color(ftxui::Color::RedLight) | ftxui::hcenter;
                 return ftxui::text("");
             }(),
         }) | ftxui::border;
-    });
+    }
 
-    screen.Loop(main_layout);
+    ftxui::Element renderGameOver() {
+        std::string final_score = std::to_string(score_bar_ ? score_bar_->getScore() : 0);
+        return ftxui::vbox({
+            ftxui::filler(),
+            renderBanner(gameover_banner_line1, ftxui::Color::RedLight),
+            renderBanner(gameover_banner_line2, ftxui::Color::RedLight),
+            ftxui::separator(),
+            ftxui::filler(),
+            ftxui::text("Final Score: " + final_score) | ftxui::hcenter | ftxui::bold,
+            ftxui::filler(),
+            ftxui::text("Press ENTER or R to retry") | ftxui::hcenter | ftxui::bold,
+            ftxui::text("Press Q to quit") | ftxui::hcenter | ftxui::dim,
+            ftxui::filler(),
+        }) | ftxui::border;
+    }
 
-    time_bar->stop();
+public:
+    MainComponent(ftxui::ScreenInteractive& screen, cli_options opts)
+        : screen_(screen), options_(std::move(opts)) {}
+
+    ftxui::Element OnRender() override {
+        switch (state_) {
+        case GameState::WELCOME:  return renderWelcome();
+        case GameState::PLAYING:  return renderPlaying();
+        case GameState::GAME_OVER: return renderGameOver();
+        }
+        return ftxui::text("");
+    }
+
+    bool OnEvent(ftxui::Event e) override {
+        if (state_ == GameState::WELCOME) {
+            if (e == ftxui::Event::Return || e == ftxui::Event::Character(' ')) {
+                startGame();
+                return true;
+            }
+            if (e == ftxui::Event::Character('q') || e == ftxui::Event::Escape) {
+                screen_.Exit();
+                return true;
+            }
+            return true;
+        }
+        if (state_ == GameState::GAME_OVER) {
+            if (e == ftxui::Event::Return || e == ftxui::Event::Character('r')) {
+                startGame();
+                return true;
+            }
+            if (e == ftxui::Event::Character('q') || e == ftxui::Event::Escape) {
+                screen_.Exit();
+                return true;
+            }
+            return true;
+        }
+        return ComponentBase::OnEvent(e);
+    }
+};
+
+int main(int argc, char** argv )
+{
+    auto [ parse_result, options ] = parse_cli(argc, argv);
+    if (parse_result == cli_parse_res::error) return 1;
+    if (parse_result == cli_parse_res::help) return 0;
+
+    if (!options.log_file.empty()) {
+        mtty::initLogger(options.log_file);
+        QLOG_INFO("--- match-tty started ---");
+    }
+
+    auto screen = ftxui::ScreenInteractive::TerminalOutput();
+    auto component = ftxui::Make<MainComponent>(screen, options);
+    screen.Loop(component);
+
     return 0;
 }

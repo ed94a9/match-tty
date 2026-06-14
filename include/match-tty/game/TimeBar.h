@@ -78,7 +78,7 @@ public:
         return ftxui::vbox({
             ftxui::filler(),
             ftxui::vbox({
-                ftxui::text(" " + std::to_string(remaining) + "s ")
+                ftxui::text("⏱ " + std::to_string(remaining) + "s ")
                     | ftxui::color(ftxui::Color::White) | ftxui::hcenter,
                 ftxui::vbox(std::move(segs)),
                 isOver()
