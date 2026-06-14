@@ -14,11 +14,17 @@ Boring waiting for your agent to work on something? Create a tmux pane, fire up 
 
 ## Features
 
+### Game Features
+
 - **6 tile types** rendered as Mahjong-like dot patterns.
 - **Smooth animations**: swap, eliminate, fall-down (gravity), and flash effects.
 - **Chain reactions**: matches trigger cascading eliminations.
 - **Scoring** with level progression.
+
+### Technical Features
+
 - **Portable**: Barely any binary dependency once built, which means it's largely portable where ever you've got a terminal to work on.
+- **Minimal Size**: Binary is < 1 MB. Enough to squeeze into some embedded systems. Numbers on MacOS 26: 900+ KB before strip. 600+ KB after strip.
 
 ## Usage
 
@@ -40,9 +46,19 @@ Use **arrow keys** to navigate, **Space** to select, and **arrow keys** to swap 
 ## Build
 
 ```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
+cmake -S ./ -B build/ && cmake --build ./build/ --parallel 8
 ```
 
 All dependencies (FTXUI, fmt, Quill, Lyra, Catch2) are fetched automatically via CMake `FetchContent`.
+
+To **strip** the binary for a smaller release build:
+
+```bash
+cmake -S ./ -B build/ -DCMAKE_BUILD_TYPE=Release
+cmake --build ./build/ --parallel 8
+```
+
+You can proceed to strip the binary for smaller size:
+```bash
+strip ./build/src/match-tty
+```
