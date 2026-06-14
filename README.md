@@ -62,3 +62,7 @@ You can proceed to strip the binary for smaller size:
 ```bash
 strip ./build/src/match-tty
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
