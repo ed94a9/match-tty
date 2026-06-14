@@ -23,7 +23,7 @@ Boring waiting for your agent to work on something? Create a tmux pane, fire up 
 
 ### Technical Features
 
-- **Portable**: Barely any binary dependency once built, which means it's largely portable where ever you've got a terminal to work on.
+- **Portable**: Barely any binary dependency once built, which means it's largely portable whereever you've got a terminal to work on.
 - **Minimal Size**: Binary is < 1 MB. Enough to squeeze into some embedded systems. Numbers on MacOS 26: 900+ KB before strip. 600+ KB after strip.
 
 ## Usage
