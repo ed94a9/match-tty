@@ -104,9 +104,24 @@ ftxui::Element renderBanner(const std::string& art, ftxui::Color color) {
     std::istringstream stream(art);
     std::string line;
     ftxui::Elements lines;
-    while (std::getline(stream, line))
+    while (std::getline(stream, line)) {
+        auto not_space = line.find_first_not_of(" \t");
+        if (not_space == std::string::npos)
+            continue;
         lines.push_back(ftxui::text(line) | ftxui::hcenter);
+    }
     return ftxui::vbox(std::move(lines)) | ftxui::color(color);
+}
+
+ftxui::Element renderButton(const std::string& label, bool selected) {
+    auto elem = ftxui::text(selected ? "▶ " + label + " ◀" : "  " + label + "  ")
+        | ftxui::hcenter;
+    if (selected)
+        elem = elem | ftxui::bold | ftxui::color(ftxui::Color::GreenLight)
+             | ftxui::bgcolor(ftxui::Color::GrayDark);
+    else
+        elem = elem | ftxui::dim;
+    return elem;
 }
 
 class MainComponent : public ftxui::ComponentBase {
@@ -119,8 +134,11 @@ class MainComponent : public ftxui::ComponentBase {
     std::unique_ptr<ScoreBar> score_bar_;
     ftxui::Component game_grid_;
     bool was_over_ = false;
+    int welcome_sel_ = 0;
+    int gameover_sel_ = 0;
 
     void startGame() {
+        gameover_sel_ = 0;
         time_bar_.reset();
         game_ = std::make_unique<GameBoardState>(
             options_.rows, options_.cols, options_.frame_dur_ms,
@@ -149,14 +167,20 @@ class MainComponent : public ftxui::ComponentBase {
     }
 
     ftxui::Element renderWelcome() {
+        auto banner = renderBanner(welcome_banner, ftxui::Color::YellowLight);
+        auto buttons = ftxui::hbox({
+            ftxui::filler(),
+            renderButton("Start", welcome_sel_ == 0),
+            ftxui::text("  "),
+            renderButton("Quit", welcome_sel_ == 1),
+            ftxui::filler(),
+        });
         return ftxui::vbox({
-            ftxui::filler(),
-            renderBanner(welcome_banner, ftxui::Color::YellowLight),
-            ftxui::separator(),
-            ftxui::filler(),
-            ftxui::text("Press ENTER or SPACE to start") | ftxui::hcenter | ftxui::bold,
-            ftxui::text("Press Q to quit") | ftxui::hcenter | ftxui::dim,
-            ftxui::filler(),
+            ftxui::vbox({
+                banner,
+                ftxui::separator(),
+                buttons,
+            }) | ftxui::vcenter,
         }) | ftxui::border;
     }
 
@@ -164,6 +188,7 @@ class MainComponent : public ftxui::ComponentBase {
         if (time_bar_->getRemainingTime() <= 0 && !was_over_) {
             was_over_ = true;
             time_bar_->stop();
+            gameover_sel_ = 0;
             state_ = GameState::GAME_OVER;
             return renderGameOver();
         }
@@ -213,22 +238,25 @@ class MainComponent : public ftxui::ComponentBase {
     ftxui::Element renderGameOver() {
         std::string final_score = std::to_string(score_bar_ ? score_bar_->getScore() : 0);
         return ftxui::vbox({
-            ftxui::filler(),
-            renderBanner(gameover_banner_line1, ftxui::Color::RedLight),
-            renderBanner(gameover_banner_line2, ftxui::Color::RedLight),
-            ftxui::separator(),
-            ftxui::filler(),
-            ftxui::text("Final Score: " + final_score) | ftxui::hcenter | ftxui::bold,
-            ftxui::filler(),
-            ftxui::text("Press ENTER or R to retry") | ftxui::hcenter | ftxui::bold,
-            ftxui::text("Press Q to quit") | ftxui::hcenter | ftxui::dim,
-            ftxui::filler(),
+            ftxui::vbox({
+                renderBanner(gameover_banner_line1, ftxui::Color::RedLight),
+                renderBanner(gameover_banner_line2, ftxui::Color::RedLight),
+                ftxui::separator(),
+                ftxui::text("🏆 Final Score: " + final_score) | ftxui::hcenter | ftxui::bold,
+                ftxui::hbox({
+                    ftxui::filler(),
+                    renderButton("Retry", gameover_sel_ == 0),
+                    ftxui::text("  "),
+                    renderButton("Quit", gameover_sel_ == 1),
+                    ftxui::filler(),
+                }),
+            }) | ftxui::vcenter,
         }) | ftxui::border;
     }
 
 public:
     MainComponent(ftxui::ScreenInteractive& screen, cli_options opts)
-        : screen_(screen), options_(std::move(opts)) {}
+        : screen_(screen), options_(std::move(opts)) { welcome_sel_ = 0; }
 
     ftxui::Element OnRender() override {
         switch (state_) {
@@ -241,23 +269,33 @@ public:
 
     bool OnEvent(ftxui::Event e) override {
         if (state_ == GameState::WELCOME) {
-            if (e == ftxui::Event::Return || e == ftxui::Event::Character(' ')) {
-                startGame();
+            if (e == ftxui::Event::ArrowLeft || e == ftxui::Event::Character('h')) {
+                welcome_sel_ = (welcome_sel_ == 0) ? 1 : 0;
                 return true;
             }
-            if (e == ftxui::Event::Character('q') || e == ftxui::Event::Escape) {
-                screen_.Exit();
+            if (e == ftxui::Event::ArrowRight || e == ftxui::Event::Character('l')) {
+                welcome_sel_ = (welcome_sel_ == 0) ? 1 : 0;
+                return true;
+            }
+            if (e == ftxui::Event::Return) {
+                if (welcome_sel_ == 0) startGame();
+                else screen_.Exit();
                 return true;
             }
             return true;
         }
         if (state_ == GameState::GAME_OVER) {
-            if (e == ftxui::Event::Return || e == ftxui::Event::Character('r')) {
-                startGame();
+            if (e == ftxui::Event::ArrowLeft || e == ftxui::Event::Character('h')) {
+                gameover_sel_ = (gameover_sel_ == 0) ? 1 : 0;
                 return true;
             }
-            if (e == ftxui::Event::Character('q') || e == ftxui::Event::Escape) {
-                screen_.Exit();
+            if (e == ftxui::Event::ArrowRight || e == ftxui::Event::Character('l')) {
+                gameover_sel_ = (gameover_sel_ == 0) ? 1 : 0;
+                return true;
+            }
+            if (e == ftxui::Event::Return) {
+                if (gameover_sel_ == 0) startGame();
+                else screen_.Exit();
                 return true;
             }
             return true;
